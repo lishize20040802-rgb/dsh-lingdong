@@ -1,0 +1,70 @@
+export const DEFAULTS = Object.freeze({
+  enabled: true, ambient: true, aggregate: true,
+  flight: 470, hold: 180, settle: 350, reveal: 420, dissolve: 550,
+  breathing: 4200, ambientPeriod: 24000, maxOrbs: 4, maxQueue: 3,
+});
+
+export function normalizeOptions(input = {}) {
+  const result = { ...DEFAULTS };
+  for (const key of ['enabled', 'ambient', 'aggregate']) {
+    if (typeof input?.[key] === 'boolean') result[key] = input[key];
+  }
+  for (const key of ['flight', 'hold', 'settle', 'reveal', 'dissolve']) {
+    if (Number.isFinite(input?.[key])) result[key] = Math.max(80, Math.min(1500, input[key]));
+  }
+  return result;
+}
+
+/** Host facts only; no fabricated percent-complete or inference from text. */
+export function agentRows(sessionId, list, statuses) {
+  const catalog = list.projectionsBySession?.[sessionId]?.values?.subagentCatalog
+    ?? list.byId?.[sessionId]?.projectionValues?.subagentCatalog ?? [];
+  return catalog.map(entry => {
+    const summary = list.byId?.[entry.id];
+    const timing = list.projectionsBySession?.[entry.id]?.values?.subagentTiming
+      ?? summary?.projectionValues?.subagentTiming;
+    const running = statuses.get(entry.id)?.running ?? summary?.running;
+    const state = running === true ? 'working'
+      : timing?.lastTurnCompleted === true ? 'completed' : 'queued';
+    return { id: entry.id, title: entry.label || summary?.displayTitle || entry.id,
+      state, timing, inactive: running === false && timing?.lastTurnCompleted !== true };
+  });
+}
+
+export function activeSessions(list, statuses) {
+  const active = new Set();
+  for (const [id, row] of Object.entries(list.byId ?? {})) {
+    if ((statuses.get(id)?.running ?? row.running) === true) active.add(id);
+  }
+  for (const [id, status] of statuses) if (status.running === true) active.add(id);
+  // Propagate activity through catalog ancestry, including unopened parent rows.
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const [id, projection] of Object.entries(list.projectionsBySession ?? {})) {
+      if (!active.has(id) && projection.values?.subagentCatalog?.some(x => active.has(x.id))) {
+        active.add(id); changed = true;
+      }
+    }
+  }
+  return active;
+}
+
+/** Retain only live completion transitions; opening history never replays fireworks. */
+export function reconcileAgents(previous, incoming, initialized) {
+  const next = new Map();
+  for (const row of incoming) {
+    const before = previous.get(row.id);
+    if (row.state === 'completed') {
+      if (before && before.state !== 'completed') next.set(row.id, { ...row, exiting: true });
+      else if (before?.exiting) next.set(row.id, before);
+    } else next.set(row.id, { ...row, fresh: initialized && !before });
+  }
+  return next;
+}
+
+export function agentLabel(row) {
+  if (row.state === 'completed') return `${row.title} · 已完成`;
+  if (row.state === 'working') return `${row.title} · 工作中（未提供百分比进度）`;
+  return `${row.title} · ${row.inactive ? '当前未运行' : '排队 / 等待状态同步'}`;
+}

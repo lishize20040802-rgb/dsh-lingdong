@@ -1,0 +1,27 @@
+{
+  "checks": [
+    "history mount has no entrance animations",
+    "four child orbs plus aggregate control",
+    "focused sidebar stays still; 4 background rows are muted",
+    "keyboard focus exposes task tooltip",
+    "submission emits a text orb without changing message text",
+    "emission completes and cleans overlay",
+    "live paragraph and structured blocks animate",
+    "stream updates never reblur existing text",
+    "failed send removes in-flight effects",
+    "rapid submissions keep one emission in flight",
+    "switching conversations hides parent agents and cancels pending emissions",
+    "completion dissolves all child orbs including hidden group members",
+    "reduced motion disables bubbling",
+    "reduced motion uses static send highlight",
+    "narrow desktop window has no horizontal overflow",
+    "settings disable all plugin surface and sidebar effects",
+    "high contrast keeps sidebar titles readable",
+    "unload cleans CSS, overlays, surface and sidebar classes",
+    "re-enable mounts exactly one stylesheet and dock",
+    "no browser runtime errors"
+  ],
+  "errors": [],
+  "browser": "153.0.4234.48",
+  "fixture": true
+}

@@ -1,0 +1,9 @@
+node_modules/
+work/
+coverage/
+*.log
+*.tgz
+*.zip
+.env
+.env.*
+!.env.example

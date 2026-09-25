@@ -1,0 +1,60 @@
+{
+  "name": "dsh-lingdong",
+  "version": "0.1.0",
+  "description": "灵动：DeepSeek Harness 对话界面的克制流动动效",
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": ["lib", "cordis.patch.yml", "README.md", "docs", "LICENSE"],
+  "license": "MIT",
+  "repository": {"type": "git", "url": "git+https://github.com/lishize20040802-rgb/dsh-lingdong.git"},
+  "homepage": "https://github.com/lishize20040802-rgb/dsh-lingdong#readme",
+  "bugs": {"url": "https://github.com/lishize20040802-rgb/dsh-lingdong/issues"},
+  "keywords": ["dsh-plugin", "deepseek-harness", "ui", "motion", "accessibility"],
+  "engines": {"node": ">=24", "dsh": "0.1.7-rc.2"},
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {"patch": "./cordis.patch.yml"},
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-session",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-chat",
+        "@deepseek-ai/dsh-client-ui-workspace",
+        "@deepseek-ai/dsh-client-ui-layout"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.0.4",
+    "@deepseek-ai/dsh-client-ui-conversation": "0.1.7-rc.2",
+    "@deepseek-ai/dsh-client-ui-chat": "0.1.7-rc.2",
+    "@deepseek-ai/dsh-client-ui-session": "0.1.7-rc.2",
+    "@deepseek-ai/dsh-client-ui-renderer": "0.1.7-rc.2",
+    "@deepseek-ai/dsh-client-ui-workspace": "0.1.7-rc.2",
+    "@deepseek-ai/dsh-client-ui-layout": "0.1.7-rc.2"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-client-ui-conversation": {"optional": true},
+    "@deepseek-ai/dsh-client-ui-chat": {"optional": true},
+    "@deepseek-ai/dsh-client-ui-session": {"optional": true},
+    "@deepseek-ai/dsh-client-ui-renderer": {"optional": true},
+    "@deepseek-ai/dsh-client-ui-workspace": {"optional": true},
+    "@deepseek-ai/dsh-client-ui-layout": {"optional": true}
+  },
+  "devDependencies": {"esbuild": "0.24.2", "react": "18.3.1", "react-dom": "18.3.1", "playwright-core": "1.58.2"},
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/*.test.mjs",
+    "test:browser": "node test/browser.mjs",
+    "test:official": "node test/official.mjs",
+    "check": "npm run build && npm test",
+    "prepublishOnly": "npm run check"
+  }
+}
