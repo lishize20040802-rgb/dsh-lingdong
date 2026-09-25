@@ -58,6 +58,7 @@ export class MotionSurface {
     // Baseline all mounted blocks: history must not animate when opening a Session.
     for (const block of root.querySelectorAll(BLOCKS)) this.seen.add(block);
     this.observer = new MutationObserver(records => {
+      for (const cleanup of this.taskFlights) if (!cleanup.target.isConnected) cleanup();
       for (const record of records) {
         if (record.target === this.layer || this.layer.contains(record.target)) continue;
         if (record.type === 'attributes') this.changed.add(record.target);
@@ -256,6 +257,7 @@ export class MotionSurface {
       { opacity: 1, transform: 'translate(calc(-50% + '+dx+'px),calc(-50% + '+dy+'px)) scale(1)' },
     ], { duration: this.options.taskFlight, easing: EASING });
     const cleanup = () => { animation.cancel(); hidden.cancel(); orb.remove(); this.taskFlights.delete(cleanup); };
+    cleanup.target = element;
     this.taskFlights.add(cleanup); animation.finished.then(cleanup, cleanup); return cleanup;
   }
   cancelFlight() {

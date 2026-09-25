@@ -49,13 +49,36 @@
 
 .ld-orb{overflow:hidden;isolation:isolate;vertical-align:middle}
 .ld-orb:before,.ld-orb:after{content:"";position:absolute;pointer-events:none;border-radius:50%}
-.ld-orb:before{inset:3px -3px -5px 4px;background:radial-gradient(ellipse,#b89cdd80,transparent 70%);transform:rotate(-25deg);animation:ld-pearl-drift 6.8s ease-in-out infinite alternate}
+.ld-orb:before{inset:-35%;background:radial-gradient(ellipse at 20% 25%,#69cbdac9,transparent 55%),radial-gradient(ellipse at 80% 35%,#9e8ce2c4,transparent 55%),radial-gradient(ellipse at 35% 85%,#edabc6bf,transparent 52%),radial-gradient(ellipse at 80% 85%,#91dab3b3,transparent 55%);animation:ld-pearl-colors 11s linear infinite;z-index:-1}
 .ld-orb:after{width:10px;height:5px;left:4px;top:3px;background:linear-gradient(160deg,#fff9,#fff0);transform:rotate(-32deg);opacity:.8}
 .ld-working{animation:ld-pearl-breathe 4.8s ease-in-out infinite}
 .ld-orb-wrap:nth-child(2n) .ld-orb{animation-delay:-1.7s}.ld-orb-wrap:nth-child(3n) .ld-orb:before{animation-delay:-3.2s}
 .ld-queued:before{animation:none;opacity:.4}
+.ld-working i{width:4px;height:4px;left:5px;bottom:2px;border:1px solid #ffffffc9;background:#ffffff25;box-shadow:0 0 2px #ffffff33;animation:ld-live-bubble 3.2s ease-in-out infinite}
+.ld-working i:nth-child(2){width:3px;height:3px;left:12px;animation-delay:-.64s}
+.ld-working i:nth-child(3){width:5px;height:5px;left:8px;animation-delay:-1.28s}
+.ld-working i:nth-child(4){width:3px;height:3px;left:15px;animation-delay:-1.92s}
+.ld-working i:nth-child(5){width:4px;height:4px;left:3px;animation-delay:-2.56s}
+@keyframes ld-pearl-colors{0%{transform:rotate(0deg) scale(1);opacity:.72}50%{transform:rotate(180deg) scale(1.12);opacity:1}100%{transform:rotate(360deg) scale(1);opacity:.72}}
+@keyframes ld-live-bubble{0%{opacity:0;transform:translate(0,3px) scale(.45)}18%{opacity:.72}65%{opacity:.6;transform:translate(1px,-10px) scale(.85)}100%{opacity:0;transform:translate(-1px,-21px) scale(1.1)}}
 @keyframes ld-pearl-drift{from{transform:translate(-3px,-2px) rotate(-25deg);opacity:.45}to{transform:translate(3px,2px) rotate(25deg);opacity:.95}}
 @keyframes ld-pearl-breathe{0%,100%{transform:translateY(.5px) scale(.96);opacity:.82}50%{transform:translateY(-.8px) scale(1.035);opacity:1}}
 .ld-paused *,.ld-paused:before,.ld-paused:after,.ld-paused *:before,.ld-paused *:after{animation-play-state:paused!important}
 @media(prefers-reduced-motion:reduce){.ld-orb,.ld-orb:before{animation:none!important}}
 @media(forced-colors:active){.ld-orb:before,.ld-orb:after{display:none}}
+
+/* A bounded constellation inside our header slot; host controls do not move. */
+.ld-orbits-2,.ld-orbits-3{position:relative;display:block;flex:none;width:64px;height:44px;padding:0;overflow:visible;max-height:none}
+.ld-orbits-2 .ld-orb-wrap,.ld-orbits-3 .ld-orb-wrap{position:absolute;left:50%;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px}
+.ld-orbits-2 .ld-orb,.ld-orbits-3 .ld-orb{width:18px;height:18px}
+.ld-orbits-2 .ld-orb-wrap{animation:ld-binary-orbit 16s linear infinite}
+.ld-orbits-2 .ld-orb-wrap:nth-child(2){animation-delay:-8s}
+.ld-orbits-3 .ld-orb-wrap{animation:ld-three-body 21s linear infinite}
+.ld-orbits-3 .ld-orb-wrap:nth-child(2){animation-delay:-7s}
+.ld-orbits-3 .ld-orb-wrap:nth-child(3){animation-delay:-14s}
+.ld-orbits-2:hover .ld-orb-wrap,.ld-orbits-3:hover .ld-orb-wrap,.ld-orbits-2:focus-within .ld-orb-wrap,.ld-orbits-3:focus-within .ld-orb-wrap{animation-play-state:paused}
+@keyframes ld-binary-orbit{from{transform:rotate(0deg) translateX(14px) rotate(0deg)}to{transform:rotate(360deg) translateX(14px) rotate(-360deg)}}
+@keyframes ld-three-body{0%{transform:rotate(0deg) translateX(17px) rotate(0deg) scale(1)}25%{transform:rotate(90deg) translateX(13px) rotate(-90deg) scale(.9)}50%{transform:rotate(180deg) translateX(18px) rotate(-180deg) scale(1.04)}75%{transform:rotate(270deg) translateX(13px) rotate(-270deg) scale(.92)}100%{transform:rotate(360deg) translateX(17px) rotate(-360deg) scale(1)}}
+.ld-task-list{position:absolute;right:0;top:calc(100% + 10px);z-index:100;width:300px;max-width:80vw;max-height:260px;overflow:auto;padding:14px 16px;border:1px solid #91a9ba55;border-radius:16px;background:var(--dsw-alias-bg-base,#f7f9fa);color:var(--ld-ink);box-shadow:0 10px 32px #20304725;font-size:12px;line-height:1.7}
+.ld-task-list ul{padding-left:17px;margin:8px 0 0}.ld-task-list li{margin:6px 0;overflow-wrap:anywhere}
+@media(prefers-reduced-motion:reduce){.ld-orbits-2 .ld-orb-wrap,.ld-orbits-3 .ld-orb-wrap{animation:none!important}.ld-orbits-2 .ld-orb-wrap:first-child{transform:translateX(-12px)}.ld-orbits-2 .ld-orb-wrap:nth-child(2){transform:translateX(12px)}.ld-orbits-3 .ld-orb-wrap:first-child{transform:translate(0,-11px)}.ld-orbits-3 .ld-orb-wrap:nth-child(2){transform:translate(-13px,10px)}.ld-orbits-3 .ld-orb-wrap:nth-child(3){transform:translate(13px,10px)}}

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
-import { normalizeOptions, agentRows, taskRows, reconcileAgents, activeSessions, agentLabel } from '../src/model.js';
+import { normalizeOptions, agentRows, taskRows, orbitRows, reconcileAgents, activeSessions, agentLabel } from '../src/model.js';
 
 test('preferences validate corrupt storage and bound timings', () => {
   assert.equal(normalizeOptions(null).enabled, true);
@@ -70,4 +70,14 @@ test('jobs coexist with continuable agents and terminal reasons stay truthful', 
   assert.match(agentLabel(rows[2]), /失败.*exit code: 1/);
   assert.equal(activeSessions({byId:{}}, new Map(), {parent:jobs}).has('parent'), true);
   assert.equal(activeSessions({byId:{}}, new Map(), {parent:[jobs[1]]}).size, 0);
+});
+
+test('orb groups cap four or more tasks at three without losing task identities', () => {
+  for (const count of [0, 1, 2, 3, 4, 6, 20]) {
+    const rows = Array.from({length:count}, (_, i) => ({id:String(i),title:`任务 ${i}`,state:i%2 ? 'queued' : 'working'}));
+    const visible = orbitRows(rows);
+    assert.equal(visible.length, Math.min(3, count));
+    const represented = visible.flatMap(row => row.members ?? [row]);
+    assert.deepEqual(represented.map(row => row.id).sort(), rows.map(row => row.id).sort());
+  }
 });

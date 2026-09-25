@@ -41,16 +41,35 @@ try {
   await page.waitForTimeout(650);
   check('failed job settles instead of running forever', await page.locator('.ld-orb').count() === 0);
   await page.evaluate(() => fixture.jobs([]));
+  await page.evaluate(() => fixture.agents(2));
+  await page.waitForSelector('.ld-orbits-2');
+  check('two tasks mutually orbit with opposite phases', await page.locator('.ld-orbits-2').evaluate(el => {
+    const styles = [...el.querySelectorAll('.ld-orb-wrap')].map(node => getComputedStyle(node));
+    return styles.length === 2 && styles.every(style => style.animationName === 'ld-binary-orbit') && styles[0].animationDelay !== styles[1].animationDelay;
+  }));
+  await page.evaluate(() => fixture.agents(3));
+  await page.waitForSelector('.ld-orbits-3');
+  check('three tasks use three phased trajectories', await page.locator('.ld-orbits-3 .ld-orb-wrap').count() === 3);
+  await page.evaluate(() => fixture.agents(4));
+  await page.waitForSelector('[aria-label="查看全部 4 个任务"]');
+  check('four tasks are represented by exactly three balls', await page.locator('.ld-orb').count() === 3);
   await page.evaluate(() => fixture.agents());
   await page.waitForSelector('.ld-working');
-  check('four child orbs plus aggregate control', await page.locator('.ld-orb').count() === 4 && await page.getByLabel('展开其余 2 个任务').count() === 1);
+  check('six tasks remain three balls with a truthful count', await page.locator('.ld-orb').count() === 3 && await page.getByLabel('查看全部 6 个任务').count() === 1);
   await page.waitForSelector('[aria-selected=true].ld-row-selected.ld-row-active');
   check('selected and running sidebar styles coexist distinctly', await page.locator('[aria-selected=true].ld-row-selected.ld-row-active').count() === 1 && await page.locator('.ld-row-active:not(.ld-row-selected)').count() === 4);
+  check('running task orbs contain five staggered repeating bubbles', await page.locator('.ld-working').first().evaluate(el => {
+    const bubbles = [...el.querySelectorAll('i')].map(node => getComputedStyle(node));
+    return bubbles.length === 5 && bubbles.every(style => style.animationName === 'ld-live-bubble' && style.animationIterationCount === 'infinite') && new Set(bubbles.map(style => style.animationDelay)).size === 5;
+  }));
+  check('task orb color fields rotate continuously', await page.locator('.ld-working').first().evaluate(el => {
+    const style = getComputedStyle(el, '::before'); return style.animationName === 'ld-pearl-colors' && style.animationIterationCount === 'infinite' && (style.backgroundImage.match(/radial-gradient/g) || []).length === 4;
+  }));
   await page.locator('.ld-orb').first().focus();
   check('keyboard focus exposes task tooltip', await page.locator('.ld-tooltip').first().isVisible());
-  await page.getByRole('button', {name:'展开其余 2 个任务'}).click();
-  check('aggregate control exposes expanded state', await page.getByRole('button', {name:'收起任务'}).getAttribute('aria-expanded') === 'true' && await page.locator('.ld-orb').count() === 6);
-  await page.getByRole('button', {name:'收起任务'}).click();
+  await page.getByRole('button', {name:'查看全部 6 个任务'}).click();
+  check('task list exposes all six tasks while keeping exactly three balls', await page.getByRole('button', {name:'收起任务列表'}).getAttribute('aria-expanded') === 'true' && await page.locator('.ld-orb').count() === 3 && await page.locator('.ld-task-list li').count() === 6);
+  await page.getByRole('button', {name:'收起任务列表'}).click();
   check('color belongs to whole row; original title stays opaque', await page.locator('.ld-row-selected').evaluate(el => getComputedStyle(el, '::before').backgroundImage.includes('gradient') && getComputedStyle(el.querySelector('span:nth-of-type(2)')).color !== 'rgba(0, 0, 0, 0)' && getComputedStyle(el.querySelector('span:nth-of-type(2)'), '::before').content === 'none'));
   const beforeFlow = await page.locator('.ld-row-selected').evaluate(el => getComputedStyle(el, '::before').transform);
   await page.waitForTimeout(180);

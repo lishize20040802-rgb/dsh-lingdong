@@ -81,3 +81,18 @@ export function taskRows(sessionId, list, statuses, jobs = []) {
     progress: job.progress || job.detail, kind: job.kind,
   }))];
 }
+
+/** Four or more tasks share exactly three visible representatives; no task is dropped. */
+export function orbitRows(rows) {
+  if (rows.length < 4) return rows;
+  return Array.from({ length: 3 }, (_, index) => {
+    const members = rows.filter((_, position) => position % 3 === index);
+    return {
+      id: `group:${index}`, title: `任务组 ${index + 1} · ${members.length} 项`,
+      state: members.some(row => row.state === 'working') ? 'working'
+        : members.every(row => row.state === 'completed') ? 'completed' : 'queued',
+      statusText: members.map(agentLabel).join('；'),
+      exiting: members.every(row => row.exiting), members,
+    };
+  });
+}

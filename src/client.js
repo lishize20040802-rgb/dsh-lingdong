@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, useId } from 'react';
-import { normalizeOptions, taskRows, agentLabel, reconcileAgents, activeSessions } from './model.js';
+import { normalizeOptions, taskRows, orbitRows, agentLabel, reconcileAgents, activeSessions } from './model.js';
 import { MotionSurface, SELECTORS, SidebarObserver, clearSidebar, EASING } from './motion.js';
 import css from './style.css';
 
@@ -69,18 +69,11 @@ export function apply(ctx) {
       const timer = setTimeout(() => { if (!cancelled) callback.current(row.id); }, reduced ? 0 : prefs.getSnapshot().dissolve);
       return () => { cancelled = true; clearTimeout(timer); animation?.cancel(); };
     }, [row.id, row.exiting, reduced]);
-    useEffect(() => {
-      const element = ref.current;
-      if (!element || !row.fresh || reduced || !root) return;
-      if (row.exiting) return;
-      const surface = [...surfaces].find(value => value.root === root);
-      return surface?.emitTask(element);
-    }, [row.id, row.exiting, reduced]);
     const label = agentLabel(row);
     return h('span', { className: 'ld-orb-wrap' },
       h('button', { ref, type: 'button', className: `ld-orb ld-${row.state}`,
         'aria-label': label, 'aria-describedby': `ld-tip-${row.id}` },
-        h('i', { 'aria-hidden': true }), h('i', { 'aria-hidden': true }), h('i', { 'aria-hidden': true })),
+        ...Array.from({ length: 5 }, (_, index) => h('i', { key: index, 'aria-hidden': true }))),
       h('span', { id: `ld-tip-${row.id}`, className: 'ld-tooltip', role: 'tooltip' }, label));
   }
 
@@ -92,6 +85,7 @@ export function apply(ctx) {
     useEffect(() => options.enabled ? props.watchRows(props.sessionId) : undefined, [props.sessionId, options.enabled]);
     const marker = useRef(null), model = useRef(new Map()), initialized = useRef(false);
     const exitTimers = useRef(new Map());
+    const announced = useRef(new Set());
     const settingsRef = useRef(null), settingsTrigger = useRef(null);
     const dialogId = useId(), orbsId = useId();
     const paused = useSyncExternalStore(visibilitySource.subscribe, visibilitySource.getSnapshot);
@@ -109,7 +103,7 @@ export function apply(ctx) {
       return () => { if (docks.get(props.sessionId) === element) docks.delete(props.sessionId); };
     }, [props.sessionId]);
     useEffect(() => {
-      model.current = new Map(); initialized.current = false; setRows([]);
+      model.current = new Map(); initialized.current = false; announced.current.clear(); setRows([]);
       return () => { for (const timer of exitTimers.current.values()) clearTimeout(timer); exitTimers.current.clear(); };
     }, [props.sessionId]);
     useEffect(() => {
@@ -131,20 +125,36 @@ export function apply(ctx) {
         }, reduced ? 0 : options.dissolve));
       }
     }, [rows, reduced, options.dissolve]);
-    const clipped = options.aggregate && !expanded && rows.length > options.maxOrbs;
-    const displayed = clipped ? rows.slice(0, options.maxOrbs) : rows;
+    const displayed = orbitRows(rows);
     const root = [...document.querySelectorAll(SELECTORS.conversation)]
       .find(el => el.dataset.conversationSession === props.sessionId);
+    useEffect(() => {
+      const live = new Set(rows.map(row => row.id));
+      for (const id of announced.current) if (!live.has(id)) announced.current.delete(id);
+      const destinations = new Set();
+      rows.forEach((row, index) => {
+        if (announced.current.has(row.id)) return;
+        announced.current.add(row.id);
+        if (row.fresh && !row.exiting) destinations.add(rows.length >= 4 ? index % 3 : index);
+      });
+      if (!options.enabled || reduced || !root) return;
+      const surface = [...surfaces].find(value => value.root === root);
+      const elements = marker.current?.querySelectorAll('.ld-orb');
+      for (const index of destinations) if (elements?.[index]) surface?.emitTask(elements[index]);
+    }, [rows, root, options.enabled, reduced]);
     const catalog = list.projectionsBySession?.[props.sessionId]?.values?.subagentCatalog
       ?? list.byId?.[props.sessionId]?.projectionValues?.subagentCatalog;
     return h('div', { ref: marker, className: `ld-dock${reduced ? ' ld-reduced' : ''}${paused ? ' ld-paused' : ''}`,
       'data-ld-session': props.sessionId, 'aria-label': '灵动对话状态区' },
       options.enabled && h('span', { className: `ld-dock-line${rows.some(row => row.state === 'working') ? ' ld-live' : ''}`, 'aria-hidden': true }),
-      options.enabled && h('div', { id: orbsId, className: 'ld-orbs', 'aria-label': '后台任务与子代理状态' },
-        displayed.map(row => h(Orb, { key: row.id, row, reduced, root, onDone: remove })),
-        options.aggregate && rows.length > options.maxOrbs && h('button', { key: 'aggregate', className: 'ld-stack', type: 'button', onClick: () => setExpanded(!expanded),
-          'aria-controls': orbsId, 'aria-label': expanded ? '收起任务' : `展开其余 ${rows.length - options.maxOrbs} 个任务`,
-          'aria-expanded': expanded }, expanded ? '收起' : `+${rows.length - options.maxOrbs}`)),
+      options.enabled && h('div', { id: orbsId, className: `ld-orbs ld-orbits-${displayed.length}`, 'aria-label': '后台任务与子代理状态' },
+        displayed.map(row => h(Orb, { key: row.id, row, reduced, root, onDone: remove }))),
+      options.enabled && rows.length >= 4 && h('button', { className: 'ld-stack', type: 'button', onClick: () => setExpanded(!expanded),
+        'aria-controls': `${orbsId}-tasks`, 'aria-label': expanded ? '收起任务列表' : `查看全部 ${rows.length} 个任务`,
+        'aria-expanded': expanded }, `${rows.length} 项`),
+      options.enabled && expanded && rows.length >= 4 && h('div', { id: `${orbsId}-tasks`, className: 'ld-task-list', role: 'region', 'aria-label': '全部任务状态' },
+        h('strong', null, `${rows.length} 个任务 · 3 个动态状态球`),
+        h('ul', null, rows.map(row => h('li', { key: row.id }, agentLabel(row))))),
       h('button', { ref: settingsTrigger, type: 'button', className: 'ld-settings-button', title: '灵动动效设置', 'aria-label': '灵动动效设置',
         'aria-haspopup': 'dialog', 'aria-controls': dialogId, 'aria-expanded': settings, onClick: () => setSettings(!settings) }, '◌'),
       settings && h('dialog', { ref: settingsRef, id: dialogId, className: 'ld-settings', 'aria-labelledby': `${dialogId}-title`,
@@ -155,9 +165,10 @@ export function apply(ctx) {
           if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) setSettings(false);
         } },
         h('strong', { id: `${dialogId}-title` }, '灵动动效设置'),
-        ...[['enabled', '启用动效'], ['ambient', '背景氛围'], ['aggregate', '超过 4 个小球时折叠']].map(([key, label]) =>
+        ...[['enabled', '启用动效'], ['ambient', '背景氛围']].map(([key, label]) =>
           h('label', { key }, h('input', { type: 'checkbox', checked: options[key], onChange: event => prefs.update({ [key]: event.target.checked }) }), label)),
         h('small', null, reduced ? '系统已开启减少动态效果：使用静态状态。' : '状态来自 DSH；不额外调用模型。'),
+        h('small', null, '双球相互环绕；三球交错运行；4 个及以上任务由 3 个球代表，可展开查看全部任务。'),
         h('small', { className: 'ld-catalog-status' }, catalog === undefined ? '当前会话的子 agent 目录尚未就绪。'
           : `当前会话：${catalog.length} 个子 agent，${rows.filter(row => row.state === 'working').length} 个运行中。`),
         h('small', null, `已接入后台任务列表：${jobs.length} 项；完成、失败与停止均按真实状态显示。`),
