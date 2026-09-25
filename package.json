@@ -1,6 +1,6 @@
 {
   "name": "dsh-lingdong",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "灵动：DeepSeek Harness 对话界面的克制流动动效",
   "type": "module",
   "main": "./lib/index.js",

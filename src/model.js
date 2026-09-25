@@ -1,6 +1,6 @@
 export const DEFAULTS = Object.freeze({
   enabled: true, ambient: true, aggregate: true,
-  flight: 1050, hold: 480, settle: 780, reveal: 420, dissolve: 550,
+  flight: 1850, gather: 580, settle: 900, taskFlight: 2200, reveal: 420, dissolve: 550,
   breathing: 4200, ambientPeriod: 24000, maxOrbs: 4, maxQueue: 3,
 });
 
@@ -9,8 +9,8 @@ export function normalizeOptions(input = {}) {
   for (const key of ['enabled', 'ambient', 'aggregate']) {
     if (typeof input?.[key] === 'boolean') result[key] = input[key];
   }
-  for (const key of ['flight', 'hold', 'settle', 'reveal', 'dissolve']) {
-    if (Number.isFinite(input?.[key])) result[key] = Math.max(80, Math.min(1500, input[key]));
+  for (const key of ['flight', 'gather', 'settle', 'taskFlight', 'reveal', 'dissolve']) {
+    if (Number.isFinite(input?.[key])) result[key] = Math.max(80, Math.min(4000, input[key]));
   }
   return result;
 }

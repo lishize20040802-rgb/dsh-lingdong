@@ -1,49 +1,48 @@
-# v0.2.0 验证报告
+# v0.3.0 验证报告
 
-目标：官方 DeepSeek Harness Desktop 0.1.7-rc.2；Windows；2026-09-25。
+DSH Desktop 0.1.7-rc.2，Windows，2026-09-25。
 
-- 8 项 Node 测试通过，包括任务通道合并与失败原因、后台任务侧边栏状态。
-- 3 组真实官方契约测试通过：bundle patch 与兼容性、客户端 manifest 与提供者、SlotCore 生命周期。
-- 源码重新构建与已发货 lib 字节一致（build --check）。
-- 32 项隔离 Chromium 场景通过：
+8 项 Node 测试、3 组真实官方契约检查、源码构建字节一致性检查通过。38 项隔离 Edge 场景通过：
 
 1. history mount has no entrance animations
 2. selected idle conversation has its own flow
 3. host positioning and stacking remain unchanged
-4. background process alone produces a truthful orb
-5. background job activates its sidebar conversation
-6. failed job settles instead of running forever
-7. four child orbs plus aggregate control
-8. selected and running sidebar styles coexist distinctly
-9. keyboard focus exposes task tooltip
-10. aggregate control exposes expanded state
-11. selected title remains opaque and hides decorative text
-12. flight is clipped to a plugin-owned layer
-13. slower flight remains visible after 1.3 seconds
-14. submission emits a text orb without changing message text
-15. emission completes and cleans overlay
-16. live paragraph and structured blocks animate
-17. stream updates never reblur existing text
-18. failed send removes in-flight effects
-19. rapid submissions keep one emission in flight
-20. switching conversations hides parent agents and cancels pending emissions
-21. completion dissolves all child orbs including hidden group members
-22. reduced motion disables bubbling
-23. reduced motion uses static send highlight
-24. narrow desktop window has no horizontal overflow
-25. settings use native modal focus containment
-26. settings disable all plugin surface and sidebar effects
-27. settings restore focus to trigger
-28. high contrast keeps sidebar titles readable
-29. unload releases shared job roster
-30. unload cleans CSS, overlays, surface and sidebar classes
-31. re-enable mounts exactly one stylesheet and dock
-32. no browser runtime errors
+4. AI task ball uses an unclipped layer outside the dock scroller
+5. background process alone produces a truthful orb
+6. background job activates its sidebar conversation
+7. failed job settles instead of running forever
+8. four child orbs plus aggregate control
+9. selected and running sidebar styles coexist distinctly
+10. keyboard focus exposes task tooltip
+11. aggregate control exposes expanded state
+12. color belongs to whole row; original title stays opaque
+13. row color field moves over time
+14. flight is clipped to a plugin-owned layer
+15. message waits visually while its text gathers into the ball
+16. confirmed row replacement remains hidden until arrival
+17. slower flight remains visible after 1.3 seconds
+18. user ball travels toward the message and never the header
+19. submission emits a text orb without changing message text
+20. message is restored after expansion
+21. emission completes and cleans overlay
+22. live paragraph and structured blocks animate
+23. stream updates never reblur existing text
+24. failed send removes in-flight effects and restores messages
+25. rapid submissions keep one emission in flight
+26. switching conversations hides parent agents and cancels pending emissions
+27. completion dissolves all child orbs including hidden group members
+28. reduced motion disables bubbling
+29. reduced motion uses static send highlight
+30. narrow desktop window has no horizontal overflow
+31. settings use native modal focus containment
+32. settings disable all plugin surface and sidebar effects
+33. settings restore focus to trigger
+34. high contrast keeps sidebar titles readable
+35. unload releases shared job roster
+36. unload cleans CSS, overlays, surface and sidebar classes
+37. re-enable mounts exactly one stylesheet and dock
+38. no browser runtime errors
 
-## 验证边界
+验证使用真实 React 与 Chromium 的隔离夹具，不向模型发送真实消息。官方契约来自本机同版本发布包。发送动画的真实 Electron 观感仍需实际发送验证。
 
-浏览器测试使用真实 React 与 Edge，输入为仿照官方 DOM 和标准 hooks 的隔离夹具，不等于已在正在使用的 Electron 会话中联调。官方契约测试使用本机同版本 npm 发布包。未向模型发送测试消息，未修改 Desktop profile。
-
-界面改动限于侧边栏标题装饰、发送小球、顶部任务球和插件自身设置窗口；没有替换官方控件，没有改变对话根节点 position 或 isolation。持续 CSS 动画只改变 transform / opacity；一次性的入场仍包含短暂 blur 与尺寸收拢。共享官方任务列表订阅覆盖当前挂载的侧边栏会话行，卸载或关闭动效后释放；大量会话时仍存在相应的订阅成本。
-
-尚未对用户真实 Electron 窗口进行耗电测量，因此不宣称完全消除重绘或已有实机功耗结论。
+宿主对话根节点定位与层叠上下文保持原状。仅需要装饰的侧边栏行建立局部伪元素背景层，不改文本颜色、DOM 子节点或官方控件。短暂隐藏消息使用可取消 WAAPI，保留布局与可访问文本；失败、停用、切换会话、卸载时恢复。后台订阅、观察器与动画均在卸载后释放。

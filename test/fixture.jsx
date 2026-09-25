@@ -45,6 +45,10 @@ function App() {
 }
 const root = createRoot(document.getElementById('app')); root.render(<App/>);
 window.fixture = {
+  confirm() {
+    const before = document.querySelector('#messages [data-chat-flow-kind="user"]:last-child');
+    if (before) before.replaceWith(before.cloneNode(true));
+  },
   watches: () => state.watches,
   jobs(rows) { state.jobs = { rows: { parent: rows } }; emit(); },
   send(text = '这是一条新消息', placement = 'transcript') {

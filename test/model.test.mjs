@@ -8,7 +8,7 @@ test('preferences validate corrupt storage and bound timings', () => {
   assert.equal(normalizeOptions(null).enabled, true);
   const prefs = normalizeOptions({ enabled: 'false', flight: -99, settle: 9000, hold: NaN, maxQueue: 1e9 });
   assert.equal(prefs.enabled, true); assert.equal(prefs.flight, 80);
-  assert.equal(prefs.settle, 1500); assert.equal(prefs.hold, 480); assert.equal(prefs.maxQueue, 3);
+  assert.equal(prefs.settle, 4000); assert.equal(prefs.gather, 580); assert.equal(prefs.maxQueue, 3);
 });
 const list = {
   byId: { child: { running: true, displayTitle: '检索', projectionValues: { subagentTiming: { lastTurnCompleted: true } } } },

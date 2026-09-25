@@ -6,7 +6,7 @@ import css from './style.css';
 export const name = 'lingdong';
 export const inject = ['slots', 'uiSession', 'uiConversation', 'jobs'];
 const h = React.createElement;
-const STORAGE = 'dsh-lingdong.preferences.v2';
+const STORAGE = 'dsh-lingdong.preferences.v3';
 const EMPTY_JOBS = Object.freeze([]);
 
 function preferences() {
@@ -15,7 +15,7 @@ function preferences() {
     const stored = localStorage.getItem(STORAGE);
     saved = JSON.parse(stored || '{}');
     if (!stored) {
-      const old = JSON.parse(localStorage.getItem('dsh-lingdong.preferences.v1') || '{}');
+      const old = JSON.parse(localStorage.getItem('dsh-lingdong.preferences.v2') || localStorage.getItem('dsh-lingdong.preferences.v1') || '{}');
       saved = { enabled: old?.enabled, ambient: old?.ambient, aggregate: old?.aggregate };
     }
   } catch { saved = {}; }
@@ -72,19 +72,10 @@ export function apply(ctx) {
     useEffect(() => {
       const element = ref.current;
       if (!element || !row.fresh || reduced || !root) return;
-      const candidates = [...root.querySelectorAll('[data-chat-flow-kind]')];
-      const source = candidates.reverse().find(el => el.getAttribute('data-chat-flow-kind')?.startsWith('assistant'));
-      if (!source || !element.animate) return;
-      const from = source.getBoundingClientRect(), to = element.getBoundingClientRect();
-      // Same emission curve; cap distance so an offscreen source cannot sweep the viewport.
-      const dy = Math.max(-240, Math.min(240, from.top - to.top));
-      const dx = Math.max(-400, Math.min(400, from.left + from.width / 2 - to.left - to.width / 2));
-      const animation = element.animate([
-        { opacity: .25, transform: `translate(${dx}px,${dy}px) scale(.4)` },
-        { opacity: 1, transform: 'translateY(0) scale(1)' },
-      ], { duration: prefs.getSnapshot().flight, easing: EASING });
-      return () => animation.cancel();
-    }, [row.id, reduced]);
+      if (row.exiting) return;
+      const surface = [...surfaces].find(value => value.root === root);
+      return surface?.emitTask(element);
+    }, [row.id, row.exiting, reduced]);
     const label = agentLabel(row);
     return h('span', { className: 'ld-orb-wrap' },
       h('button', { ref, type: 'button', className: `ld-orb ld-${row.state}`,
