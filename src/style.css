@@ -1,15 +1,10 @@
 .ld-surface,.ld-dock{--ld-accent:#7b9fb7;--ld-soft:#aaa4b7;--ld-ease:cubic-bezier(.22,.75,.25,1);--ld-breathe:4.2s;--ld-ink:var(--dsw-alias-label-primary,#344454)}
 
-/* Two slowly drifting color fields fill the existing row; text and controls keep their host colors. */
-.ld-row{position:relative;isolation:isolate;border-radius:10px}
-.ld-row:before,.ld-row:after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;overflow:hidden;background:radial-gradient(ellipse at 15% 35%,#7ca8f355,transparent 65%),radial-gradient(ellipse at 80% 65%,#b993ef50,transparent 65%),linear-gradient(110deg,#82c6df25,#dca9cb30);animation:ld-row-flow 9s ease-in-out infinite alternate;transform-origin:center}
-.ld-row:after{background:radial-gradient(ellipse at 75% 20%,#86d7ca55,transparent 65%),radial-gradient(ellipse at 20% 80%,#e5b48950,transparent 65%);animation:ld-row-flow-back 12s ease-in-out infinite alternate}
-.ld-row-selected:before{background:radial-gradient(ellipse at 15% 35%,#86b9f568,transparent 65%),radial-gradient(ellipse at 80% 65%,#c0a2f068,transparent 65%),linear-gradient(110deg,#a0c7e840,#c4ade944);animation-duration:14s}
-.ld-row-selected:after{background:radial-gradient(ellipse at 70% 30%,#efbbd255,transparent 70%),radial-gradient(ellipse at 25% 75%,#93cdd652,transparent 65%);animation-duration:17s}
-.ld-row-active:not(.ld-row-selected):before{background:radial-gradient(ellipse at 15% 35%,#68c9bf68,transparent 65%),radial-gradient(ellipse at 80% 65%,#e4b47265,transparent 65%),linear-gradient(110deg,#90becc30,#bdacdc35)}
-.ld-row-selected.ld-row-active:after{animation-duration:9s}
-@keyframes ld-row-flow{0%{transform:translateX(-2%) scale(.96,1);opacity:.55}50%{transform:translateX(1%) scale(.98,.96);opacity:1}100%{transform:translateX(2%) scale(.96,1);opacity:.72}}
-@keyframes ld-row-flow-back{0%{transform:translateX(2%) scale(.96,.96);opacity:.85}100%{transform:translateX(-2%) scale(.96,1);opacity:.25}}
+/* Animate the host row's own background. No extra node, pseudo-element or stacking context. */
+[data-row-key][role=treeitem].ld-row{background-image:linear-gradient(110deg,#85b9ed66 0%,#b098e973 20%,#e3adc866 40%,#84cdd366 60%,#a7b4ed73 80%,#85b9ed66 100%);background-size:350% 250%;background-repeat:no-repeat;animation:ld-row-native-flow 10s ease-in-out infinite}
+[data-row-key][role=treeitem].ld-row-active:not(.ld-row-selected){background-image:linear-gradient(110deg,#68cbbb70 0%,#a8c5e966 20%,#e5b57870 40%,#a7d3b866 60%,#b8a2db66 80%,#68cbbb70 100%);animation-duration:7s}
+[data-row-key][role=treeitem].ld-row-selected.ld-row-active{animation-duration:8s}
+@keyframes ld-row-native-flow{0%,100%{background-position:0% 45%}25%{background-position:45% 100%}50%{background-position:100% 55%}75%{background-position:55% 0%}}
 .ld-effects{position:fixed;z-index:1;pointer-events:none;overflow:hidden;contain:layout paint}
 .ld-ambient{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,#839fba0c,transparent 65%),radial-gradient(ellipse at 80% 75%,#9990af09,transparent 60%);animation:ld-ambient 24s ease-in-out infinite alternate}
 .ld-dock{display:flex;align-items:center;gap:8px;position:relative;min-width:26px;max-width:min(42vw,380px);min-height:28px;flex-shrink:1}
@@ -44,8 +39,8 @@
 @keyframes ld-bubble{0%,15%{opacity:0;transform:translateY(1px) scale(.5)}40%{opacity:.6}85%,100%{opacity:0;transform:translateY(-13px) scale(1)}}
 @keyframes ld-ambient{from{opacity:.55}to{opacity:1}}
 @media(max-width:600px){.ld-dock{max-width:44vw;gap:3px}.ld-orbs{gap:5px;max-height:64px}.ld-orb{width:19px;height:19px}.ld-tooltip{left:auto;right:0}.ld-stack{min-width:28px;min-height:28px}}
-@media(prefers-reduced-motion:reduce){.ld-row:before,.ld-row:after,.ld-dock *,.ld-dock-line:after,.ld-ambient,.ld-stream:after{animation:none!important;transition:none!important}.ld-orb i{display:none}.ld-flight{display:none}}
-@media(forced-colors:active){.ld-row:before,.ld-row:after{display:none}.ld-orb,.ld-stack{border:1px solid ButtonText;background:Canvas}.ld-stream:after{background:CanvasText}.ld-ambient,.ld-dock-line{display:none}}
+@media(prefers-reduced-motion:reduce){.ld-row,.ld-dock *,.ld-dock-line:after,.ld-ambient,.ld-stream:after{animation:none!important;transition:none!important}.ld-orb i{display:none}.ld-flight{display:none}}
+@media(forced-colors:active){[data-row-key][role=treeitem].ld-row{background-image:none;animation:none}.ld-orb,.ld-stack{border:1px solid ButtonText;background:Canvas}.ld-stream:after{background:CanvasText}.ld-ambient,.ld-dock-line{display:none}}
 
 .ld-orb{overflow:hidden;isolation:isolate;vertical-align:middle}
 .ld-orb:before,.ld-orb:after{content:"";position:absolute;pointer-events:none;border-radius:50%}
@@ -63,7 +58,7 @@
 @keyframes ld-live-bubble{0%{opacity:0;transform:translate(0,3px) scale(.45)}18%{opacity:.72}65%{opacity:.6;transform:translate(1px,-10px) scale(.85)}100%{opacity:0;transform:translate(-1px,-21px) scale(1.1)}}
 @keyframes ld-pearl-drift{from{transform:translate(-3px,-2px) rotate(-25deg);opacity:.45}to{transform:translate(3px,2px) rotate(25deg);opacity:.95}}
 @keyframes ld-pearl-breathe{0%,100%{transform:translateY(.5px) scale(.96);opacity:.82}50%{transform:translateY(-.8px) scale(1.035);opacity:1}}
-.ld-paused *,.ld-paused:before,.ld-paused:after,.ld-paused *:before,.ld-paused *:after{animation-play-state:paused!important}
+.ld-paused,.ld-paused *,.ld-paused:before,.ld-paused:after,.ld-paused *:before,.ld-paused *:after{animation-play-state:paused!important}
 @media(prefers-reduced-motion:reduce){.ld-orb,.ld-orb:before{animation:none!important}}
 @media(forced-colors:active){.ld-orb:before,.ld-orb:after{display:none}}
 

@@ -342,5 +342,7 @@ export class SidebarObserver {
 }
 
 export function clearSidebar() {
-  for (const row of document.querySelectorAll(SELECTORS.sidebar)) row.classList.remove('ld-row', 'ld-row-active', 'ld-row-selected', 'ld-paused');
+  for (const row of document.querySelectorAll(SELECTORS.sidebar)) {
+    row.classList.remove('ld-row', 'ld-row-active', 'ld-row-selected', 'ld-paused');
+  }
 }

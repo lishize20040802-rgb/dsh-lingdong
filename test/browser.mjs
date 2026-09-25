@@ -70,10 +70,14 @@ try {
   await page.getByRole('button', {name:'查看全部 6 个任务'}).click();
   check('task list exposes all six tasks while keeping exactly three balls', await page.getByRole('button', {name:'收起任务列表'}).getAttribute('aria-expanded') === 'true' && await page.locator('.ld-orb').count() === 3 && await page.locator('.ld-task-list li').count() === 6);
   await page.getByRole('button', {name:'收起任务列表'}).click();
-  check('color belongs to whole row; original title stays opaque', await page.locator('.ld-row-selected').evaluate(el => getComputedStyle(el, '::before').backgroundImage.includes('gradient') && getComputedStyle(el.querySelector('span:nth-of-type(2)')).color !== 'rgba(0, 0, 0, 0)' && getComputedStyle(el.querySelector('span:nth-of-type(2)'), '::before').content === 'none'));
-  const beforeFlow = await page.locator('.ld-row-selected').evaluate(el => getComputedStyle(el, '::before').transform);
-  await page.waitForTimeout(180);
-  check('row color field moves over time', beforeFlow !== await page.locator('.ld-row-selected').evaluate(el => getComputedStyle(el, '::before').transform));
+  check('native row background animates without overlays or changed host layout', await page.locator('.ld-row-selected').evaluate(el => {
+    const style = getComputedStyle(el);
+    return style.backgroundImage.includes('gradient') && style.animationName === 'ld-row-native-flow' && style.position === 'static' && style.isolation === 'auto' && getComputedStyle(el, '::before').content === 'none' && getComputedStyle(el, '::after').content === 'none' && el.children.length === 3;
+  }));
+  check('native title retains opaque original color', await page.locator('.ld-row-selected > span:nth-of-type(2)').evaluate(el => getComputedStyle(el).color === getComputedStyle(el.parentElement).color));
+  const beforeFlow = await page.locator('.ld-row-selected').evaluate(el => getComputedStyle(el).backgroundPosition);
+  await page.waitForTimeout(300);
+  check('button background itself flows over time', beforeFlow !== await page.locator('.ld-row-selected').evaluate(el => getComputedStyle(el).backgroundPosition));
   await page.waitForSelector('.ld-task-flight', {state:'detached'});
   await page.evaluate(() => fixture.send());
   await page.waitForSelector('.ld-flight');
