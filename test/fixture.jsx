@@ -2,7 +2,7 @@ import React, { useSyncExternalStore } from 'react';
 import { createRoot } from 'react-dom/client';
 const registrations = new Map(), disposers = [];
 const state = {
-  sessionId: 'parent', session: { pendingSubmissions: [], promptError: null },
+  jobs: { rows: {} }, watches: 0, sessionId: 'parent', session: { pendingSubmissions: [], promptError: null },
   list: { byId: {}, projectionsBySession: { parent: { values: { subagentCatalog: [] } } } }, statuses: new Map(),
 };
 let revision = 0; const subscribers = new Set();
@@ -12,9 +12,11 @@ window.__ModuleLoader__ = { load: entry => {
   const plugin = entry.factory(id => { if (id === 'react') return React; throw new Error(`Unexpected external: ${id}`); });
   window.mount = () => {
     plugin.apply({
+      jobs: { state: {getSnapshot: () => state.jobs, subscribe}, watchRows: () => { state.watches++; return () => state.watches--; } },
       effect: factory => { const dispose = factory(); disposers.push(dispose); return dispose; },
       slots: { inject: (_name, fn) => fn(), register: (spec, Component) => {
-        registrations.set(spec.name, Component);
+        const injected = spec.inject?.();
+        registrations.set(spec.name, props => <Component {...props} watchRows={injected?.watchRows}/>);
         return () => registrations.delete(spec.name);
       } },
     }); emit();
@@ -22,6 +24,7 @@ window.__ModuleLoader__ = { load: entry => {
   window.mount();
 } };
 const hooks = {
+  useJobs: select => { useSyncExternalStore(subscribe, () => revision); return select(state.jobs); },
   useSessions: select => { useSyncExternalStore(subscribe, () => revision); return select(state.list); },
   useSessionStatus: select => { useSyncExternalStore(subscribe, () => revision); return select(state.statuses); },
   useSession: select => { useSyncExternalStore(subscribe, () => revision); return select(state.session); },
@@ -42,6 +45,8 @@ function App() {
 }
 const root = createRoot(document.getElementById('app')); root.render(<App/>);
 window.fixture = {
+  watches: () => state.watches,
+  jobs(rows) { state.jobs = { rows: { parent: rows } }; emit(); },
   send(text = '这是一条新消息', placement = 'transcript') {
     const id = `rpc-${Date.now()}-${Math.random()}`;
     const row = document.createElement('div'); row.dataset.chatFlowKind = 'user'; row.textContent = text;

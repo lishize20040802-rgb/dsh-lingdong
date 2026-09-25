@@ -1,16 +1,24 @@
-import React, { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { normalizeOptions, agentRows, agentLabel, reconcileAgents, activeSessions } from './model.js';
-import { MotionSurface, SELECTORS, decorateSidebar, clearSidebar, EASING } from './motion.js';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, useId } from 'react';
+import { normalizeOptions, taskRows, agentLabel, reconcileAgents, activeSessions } from './model.js';
+import { MotionSurface, SELECTORS, SidebarObserver, clearSidebar, EASING } from './motion.js';
 import css from './style.css';
 
 export const name = 'lingdong';
-export const inject = ['slots', 'uiSession', 'uiConversation'];
+export const inject = ['slots', 'uiSession', 'uiConversation', 'jobs'];
 const h = React.createElement;
-const STORAGE = 'dsh-lingdong.preferences.v1';
+const STORAGE = 'dsh-lingdong.preferences.v2';
+const EMPTY_JOBS = Object.freeze([]);
 
 function preferences() {
   let saved;
-  try { saved = JSON.parse(localStorage.getItem(STORAGE) || '{}'); } catch { saved = {}; }
+  try {
+    const stored = localStorage.getItem(STORAGE);
+    saved = JSON.parse(stored || '{}');
+    if (!stored) {
+      const old = JSON.parse(localStorage.getItem('dsh-lingdong.preferences.v1') || '{}');
+      saved = { enabled: old?.enabled, ambient: old?.ambient, aggregate: old?.aggregate };
+    }
+  } catch { saved = {}; }
   let value = normalizeOptions(saved);
   const listeners = new Set();
   return {
@@ -39,6 +47,13 @@ export function apply(ctx) {
   };
   const usePrefs = () => useSyncExternalStore(prefs.subscribe, prefs.getSnapshot);
   const useReduced = () => useSyncExternalStore(motionSource.subscribe, motionSource.getSnapshot);
+  const visibilitySource = {
+    getSnapshot: () => document.hidden,
+    subscribe: callback => {
+      document.addEventListener('visibilitychange', callback);
+      return () => document.removeEventListener('visibilitychange', callback);
+    },
+  };
 
   function Orb({ row, reduced, root, onDone }) {
     const ref = useRef(null);
@@ -82,9 +97,21 @@ export function apply(ctx) {
     const options = usePrefs(), reduced = useReduced();
     const list = props.useSessions(state => state);
     const statuses = props.useSessionStatus(state => state);
+    const jobs = props.useJobs(state => state.rows[props.sessionId]) ?? EMPTY_JOBS;
+    useEffect(() => options.enabled ? props.watchRows(props.sessionId) : undefined, [props.sessionId, options.enabled]);
     const marker = useRef(null), model = useRef(new Map()), initialized = useRef(false);
     const exitTimers = useRef(new Map());
+    const settingsRef = useRef(null), settingsTrigger = useRef(null);
+    const dialogId = useId(), orbsId = useId();
+    const paused = useSyncExternalStore(visibilitySource.subscribe, visibilitySource.getSnapshot);
     const [rows, setRows] = useState([]), [expanded, setExpanded] = useState(false), [settings, setSettings] = useState(false);
+    useLayoutEffect(() => {
+      const dialog = settingsRef.current, trigger = settingsTrigger.current;
+      if (!settings || !dialog) return;
+      // Native top-layer dialog owns focus containment, Escape and inert background.
+      dialog.showModal(); dialog.querySelector('input')?.focus();
+      return () => { dialog.close(); if (trigger?.isConnected) trigger.focus(); };
+    }, [settings]);
     useLayoutEffect(() => {
       const element = marker.current;
       docks.set(props.sessionId, element);
@@ -95,9 +122,9 @@ export function apply(ctx) {
       return () => { for (const timer of exitTimers.current.values()) clearTimeout(timer); exitTimers.current.clear(); };
     }, [props.sessionId]);
     useEffect(() => {
-      model.current = reconcileAgents(model.current, agentRows(props.sessionId, list, statuses), initialized.current);
+      model.current = reconcileAgents(model.current, taskRows(props.sessionId, list, statuses, jobs), initialized.current);
       initialized.current = true; setRows([...model.current.values()]);
-    }, [props.sessionId, list, statuses]);
+    }, [props.sessionId, list, statuses, jobs]);
     function remove(id) {
       if (!model.current.get(id)?.exiting) return;
       model.current.delete(id); setRows([...model.current.values()]);
@@ -117,21 +144,32 @@ export function apply(ctx) {
     const displayed = clipped ? rows.slice(0, options.maxOrbs) : rows;
     const root = [...document.querySelectorAll(SELECTORS.conversation)]
       .find(el => el.dataset.conversationSession === props.sessionId);
-    return h('div', { ref: marker, className: `ld-dock${reduced ? ' ld-reduced' : ''}`,
+    const catalog = list.projectionsBySession?.[props.sessionId]?.values?.subagentCatalog
+      ?? list.byId?.[props.sessionId]?.projectionValues?.subagentCatalog;
+    return h('div', { ref: marker, className: `ld-dock${reduced ? ' ld-reduced' : ''}${paused ? ' ld-paused' : ''}`,
       'data-ld-session': props.sessionId, 'aria-label': '灵动对话状态区' },
-      options.enabled && h('span', { className: 'ld-dock-line', 'aria-hidden': true }),
-      options.enabled && h('div', { className: 'ld-orbs', 'aria-label': '子 agent 状态' },
+      options.enabled && h('span', { className: `ld-dock-line${rows.some(row => row.state === 'working') ? ' ld-live' : ''}`, 'aria-hidden': true }),
+      options.enabled && h('div', { id: orbsId, className: 'ld-orbs', 'aria-label': '后台任务与子代理状态' },
         displayed.map(row => h(Orb, { key: row.id, row, reduced, root, onDone: remove })),
-        clipped && h('button', { className: 'ld-stack', type: 'button', onClick: () => setExpanded(true),
-          'aria-label': `展开其余 ${rows.length - options.maxOrbs} 个子 agent`, 'aria-expanded': false }, `+${rows.length - options.maxOrbs}`),
-        expanded && rows.length > options.maxOrbs && h('button', { className: 'ld-stack', type: 'button', onClick: () => setExpanded(false), 'aria-expanded': true }, '收起')),
-      h('button', { type: 'button', className: 'ld-settings-button', 'aria-label': '灵动动效设置',
-        'aria-expanded': settings, onClick: () => setSettings(!settings) }, '◌'),
-      settings && h('div', { className: 'ld-settings', onKeyDown: event => { if (event.key === 'Escape') setSettings(false); } },
-        h('strong', null, '灵动'),
+        options.aggregate && rows.length > options.maxOrbs && h('button', { key: 'aggregate', className: 'ld-stack', type: 'button', onClick: () => setExpanded(!expanded),
+          'aria-controls': orbsId, 'aria-label': expanded ? '收起任务' : `展开其余 ${rows.length - options.maxOrbs} 个任务`,
+          'aria-expanded': expanded }, expanded ? '收起' : `+${rows.length - options.maxOrbs}`)),
+      h('button', { ref: settingsTrigger, type: 'button', className: 'ld-settings-button', title: '灵动动效设置', 'aria-label': '灵动动效设置',
+        'aria-haspopup': 'dialog', 'aria-controls': dialogId, 'aria-expanded': settings, onClick: () => setSettings(!settings) }, '◌'),
+      settings && h('dialog', { ref: settingsRef, id: dialogId, className: 'ld-settings', 'aria-labelledby': `${dialogId}-title`,
+        onCancel: event => { event.preventDefault(); setSettings(false); },
+        onClick: event => {
+          if (event.target !== event.currentTarget) return;
+          const rect = event.currentTarget.getBoundingClientRect();
+          if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) setSettings(false);
+        } },
+        h('strong', { id: `${dialogId}-title` }, '灵动动效设置'),
         ...[['enabled', '启用动效'], ['ambient', '背景氛围'], ['aggregate', '超过 4 个小球时折叠']].map(([key, label]) =>
           h('label', { key }, h('input', { type: 'checkbox', checked: options[key], onChange: event => prefs.update({ [key]: event.target.checked }) }), label)),
         h('small', null, reduced ? '系统已开启减少动态效果：使用静态状态。' : '状态来自 DSH；不额外调用模型。'),
+        h('small', { className: 'ld-catalog-status' }, catalog === undefined ? '当前会话的子 agent 目录尚未就绪。'
+          : `当前会话：${catalog.length} 个子 agent，${rows.filter(row => row.state === 'working').length} 个运行中。`),
+        h('small', null, `已接入后台任务列表：${jobs.length} 项；完成、失败与停止均按真实状态显示。`),
         h('button', { type: 'button', onClick: () => setSettings(false) }, '关闭')));
   }
 
@@ -158,22 +196,16 @@ export function apply(ctx) {
   }
 
   function Sidebar(props) {
-    const options = usePrefs(), reduced = useReduced();
+    const options = usePrefs();
     const list = props.useSessions(state => state), statuses = props.useSessionStatus(state => state);
-    const state = useRef({ list, statuses, enabled: options.enabled });
-    state.current = { list, statuses, enabled: options.enabled };
+    const jobs = props.useJobs(state => state.rows);
+    const active = useMemo(() => activeSessions(list, statuses, jobs), [list, statuses, jobs]);
+    const observer = useRef(null);
     useEffect(() => {
-      let frame = 0;
-      const update = () => {
-        frame = 0;
-        decorateSidebar(activeSessions(state.current.list, state.current.statuses), state.current.enabled);
-      };
-      const observer = new MutationObserver(() => { if (!frame) frame = requestAnimationFrame(update); });
-      observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-selected'] });
-      update();
-      return () => { observer.disconnect(); cancelAnimationFrame(frame); clearSidebar(); };
+      const instance = new SidebarObserver(props.watchRows); observer.current = instance;
+      return () => { instance.dispose(); observer.current = null; };
     }, []);
-    useEffect(() => { decorateSidebar(activeSessions(list, statuses), options.enabled); }, [list, statuses, options, reduced]);
+    useEffect(() => { observer.current?.set(active, options.enabled); }, [active, options.enabled]);
     return null;
   }
 
@@ -188,11 +220,13 @@ export function apply(ctx) {
   // Fresh list ids add contributions; no official slot occupant is replaced.
   ctx.slots.inject('conversation.session.header.actions', () => ctx.slots.register({
     name: 'conversation.session.header.actions', id: 'lingdong-dock', order: 20,
+    inject: () => ({ hooks: { jobs: ctx.jobs.state }, watchRows: id => ctx.jobs.watchRows(id) }),
   }, Dock));
   ctx.slots.inject('conversation.input.overlay', () => ctx.slots.register({
     name: 'conversation.input.overlay', id: 'lingdong-surface', order: 20,
   }, Surface));
   ctx.slots.inject('shell.overlay', () => ctx.slots.register({
     name: 'shell.overlay', id: 'lingdong-sidebar', order: 20,
+    inject: () => ({ hooks: { jobs: ctx.jobs.state }, watchRows: id => ctx.jobs.watchRows(id) }),
   }, Sidebar));
 }

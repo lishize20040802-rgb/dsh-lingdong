@@ -2,13 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
-import { normalizeOptions, agentRows, reconcileAgents, activeSessions, agentLabel } from '../src/model.js';
+import { normalizeOptions, agentRows, taskRows, reconcileAgents, activeSessions, agentLabel } from '../src/model.js';
 
 test('preferences validate corrupt storage and bound timings', () => {
   assert.equal(normalizeOptions(null).enabled, true);
   const prefs = normalizeOptions({ enabled: 'false', flight: -99, settle: 9000, hold: NaN, maxQueue: 1e9 });
   assert.equal(prefs.enabled, true); assert.equal(prefs.flight, 80);
-  assert.equal(prefs.settle, 1500); assert.equal(prefs.hold, 180); assert.equal(prefs.maxQueue, 3);
+  assert.equal(prefs.settle, 1500); assert.equal(prefs.hold, 480); assert.equal(prefs.maxQueue, 3);
 });
 const list = {
   byId: { child: { running: true, displayTitle: '检索', projectionValues: { subagentTiming: { lastTurnCompleted: true } } } },
@@ -55,8 +55,19 @@ test('bundle is lazy CJS and requests only the shared React module', async () =>
   const requests = [];
   const exports = registration.factory(id => { requests.push(id); return { createElement() {} }; });
   assert.deepEqual(requests, ['react']); assert.equal(typeof exports.apply, 'function');
-  assert.deepEqual(Array.from(exports.inject), ['slots', 'uiSession', 'uiConversation']);
+  assert.deepEqual(Array.from(exports.inject), ['slots', 'uiSession', 'uiConversation', 'jobs']);
   assert.equal(manifest.dsh.manifestVersion, 1);
   assert.equal(manifest.engines.dsh, '0.1.7-rc.2');
   assert.match(await readFile(new URL('../cordis.patch.yml', import.meta.url), 'utf8'), /name: dsh-lingdong/);
+});
+
+test('jobs coexist with continuable agents and terminal reasons stay truthful', () => {
+  const jobs = [{id:'subagent-1',kind:'subagent',owner:'parent',label:'检索',status:'running'},
+    {id:'bash-2',kind:'bash',label:'编译',status:'failed',detail:'exit code: 1'}];
+  const rows = taskRows('parent', list, new Map(), jobs);
+  assert.equal(rows.length, 3);
+  assert.equal(new Set(rows.map(row => row.id)).size, 3);
+  assert.match(agentLabel(rows[2]), /失败.*exit code: 1/);
+  assert.equal(activeSessions({byId:{}}, new Map(), {parent:jobs}).has('parent'), true);
+  assert.equal(activeSessions({byId:{}}, new Map(), {parent:[jobs[1]]}).size, 0);
 });

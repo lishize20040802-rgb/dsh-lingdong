@@ -1,6 +1,6 @@
 export const DEFAULTS = Object.freeze({
   enabled: true, ambient: true, aggregate: true,
-  flight: 470, hold: 180, settle: 350, reveal: 420, dissolve: 550,
+  flight: 1050, hold: 480, settle: 780, reveal: 420, dissolve: 550,
   breathing: 4200, ambientPeriod: 24000, maxOrbs: 4, maxQueue: 3,
 });
 
@@ -31,12 +31,15 @@ export function agentRows(sessionId, list, statuses) {
   });
 }
 
-export function activeSessions(list, statuses) {
+export function activeSessions(list, statuses, jobsBySession = {}) {
   const active = new Set();
   for (const [id, row] of Object.entries(list.byId ?? {})) {
     if ((statuses.get(id)?.running ?? row.running) === true) active.add(id);
   }
   for (const [id, status] of statuses) if (status.running === true) active.add(id);
+  for (const [id, jobs] of Object.entries(jobsBySession)) {
+    if (jobs.some(job => job.owner === id && (job.status === 'running' || job.status === 'stopping'))) active.add(id);
+  }
   // Propagate activity through catalog ancestry, including unopened parent rows.
   let changed = true;
   while (changed) {
@@ -64,7 +67,17 @@ export function reconcileAgents(previous, incoming, initialized) {
 }
 
 export function agentLabel(row) {
+  if (row.statusText) return `${row.title} · ${row.statusText}${row.progress ? ` · ${row.progress}` : ''}`;
   if (row.state === 'completed') return `${row.title} · 已完成`;
   if (row.state === 'working') return `${row.title} · 工作中（未提供百分比进度）`;
   return `${row.title} · ${row.inactive ? '当前未运行' : '排队 / 等待状态同步'}`;
+}
+
+export function taskRows(sessionId, list, statuses, jobs = []) {
+  return [...agentRows(sessionId, list, statuses), ...jobs.map(job => ({
+    id: 'job:' + job.id, title: (job.kind === 'subagent' ? '后台子代理' : '后台任务') + ' · ' + (job.label || job.id),
+    state: ['running', 'stopping'].includes(job.status) ? 'working' : 'completed',
+    statusText: ({running:'运行中',stopping:'正在停止',completed:'已完成',failed:'失败',killed:'已停止'})[job.status] || job.status,
+    progress: job.progress || job.detail, kind: job.kind,
+  }))];
 }
