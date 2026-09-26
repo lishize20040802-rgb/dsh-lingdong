@@ -9,9 +9,9 @@
 | 客户端发现 | `exports["./client"]` → `lib/client.js`，`dsh.client.platform: web`。 |
 | 客户端加载协议 | `window.__ModuleLoader__.load({id: 'dsh-lingdong', factory})`；执行脚本仅注册工厂，物化时返回 CJS exports。 |
 | 模块共享 | React 使用桌面 shell 的共享 `require('react')`，没有打入另一份 React。没有非 baseline 的运行时模块导入，因此无需 `external` 声明。 |
-| 依赖声明 | manifest `client.inject` 声明官方 UI 提供者；客户端 Cordis `inject` 声明 `slots`、`uiSession`、`uiConversation`、`jobs` 服务。 |
+| 依赖声明 | manifest `client.inject` 声明官方 UI 提供者；客户端 Cordis `inject` 声明 `slots`、`uiSession`、`uiConversation`服务。 |
 | 插槽 | 通过 `ctx.slots.inject` 等待已有插槽声明；向三个 list 插槽注册全新 id，不替换官方组件。 |
-| 真实状态 | 组件消费官方标准 `useSession`、`useSessions`、`useSessionStatus` hooks。只读 session pending submissions、subagentCatalog、subagentTiming；通过插槽 inject hooks.jobs 获取 useJobs，并调用引用计数 watchRows。 |
+| 真实状态 | 组件消费官方标准 `useSession`、`useSessions`、`useSessionStatus` hooks。只读 session pending submissions、subagentCatalog、subagentTiming。0.5.0 已完全移除 jobs 依赖与后台任务显示。 |
 | 生命周期 | 样式归 `ctx.effect`，组件观察器和动画归 React effect；卸载与重复启用都清理。 |
 | 版本门槛 | 精确 DSH UI peer 版本供官方兼容性检查使用；引擎字段同时说明支持版本。UI peers 标为 optional，避免在外部插件目录安装另一份宿主 UI，但运行时 services 仍为必需。 |
 | 桌面安装 | 官方应用内插件管理器操作 Electron 专属 profile；不改 app.asar、不注入预加载脚本、不注册 Electron 原生权限。 |

@@ -2,13 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
-import { normalizeOptions, agentRows, taskRows, orbitRows, reconcileAgents, activeSessions, agentLabel } from '../src/model.js';
+import { normalizeOptions, agentRows, assignColors, AGENT_COLORS, taskRows, orbitRows, reconcileAgents, activeSessions, agentLabel } from '../src/model.js';
 
 test('preferences validate corrupt storage and bound timings', () => {
   assert.equal(normalizeOptions(null).enabled, true);
   const prefs = normalizeOptions({ enabled: 'false', flight: -99, settle: 9000, hold: NaN, maxQueue: 1e9 });
   assert.equal(prefs.enabled, true); assert.equal(prefs.flight, 80);
-  assert.equal(prefs.settle, 4000); assert.equal(prefs.gather, 580); assert.equal(prefs.maxQueue, 3);
+  assert.equal(prefs.settle, 4000); assert.equal(prefs.gather, 320); assert.equal(prefs.maxQueue, 3);
 });
 const list = {
   byId: { child: { running: true, displayTitle: '检索', projectionValues: { subagentTiming: { lastTurnCompleted: true } } } },
@@ -55,29 +55,30 @@ test('bundle is lazy CJS and requests only the shared React module', async () =>
   const requests = [];
   const exports = registration.factory(id => { requests.push(id); return { createElement() {} }; });
   assert.deepEqual(requests, ['react']); assert.equal(typeof exports.apply, 'function');
-  assert.deepEqual(Array.from(exports.inject), ['slots', 'uiSession', 'uiConversation', 'jobs']);
+  assert.deepEqual(Array.from(exports.inject), ['slots', 'uiSession', 'uiConversation']);
   assert.equal(manifest.dsh.manifestVersion, 1);
   assert.equal(manifest.engines.dsh, '0.1.7-rc.2');
   assert.match(await readFile(new URL('../cordis.patch.yml', import.meta.url), 'utf8'), /name: dsh-lingdong/);
 });
 
-test('jobs coexist with continuable agents and terminal reasons stay truthful', () => {
-  const jobs = [{id:'subagent-1',kind:'subagent',owner:'parent',label:'检索',status:'running'},
-    {id:'bash-2',kind:'bash',label:'编译',status:'failed',detail:'exit code: 1'}];
-  const rows = taskRows('parent', list, new Map(), jobs);
-  assert.equal(rows.length, 3);
-  assert.equal(new Set(rows.map(row => row.id)).size, 3);
-  assert.match(agentLabel(rows[2]), /失败.*exit code: 1/);
-  assert.equal(activeSessions({byId:{}}, new Map(), {parent:jobs}).has('parent'), true);
-  assert.equal(activeSessions({byId:{}}, new Map(), {parent:[jobs[1]]}).size, 0);
-});
 
-test('orb groups cap four or more tasks at three without losing task identities', () => {
-  for (const count of [0, 1, 2, 3, 4, 6, 20]) {
-    const rows = Array.from({length:count}, (_, i) => ({id:String(i),title:`任务 ${i}`,state:i%2 ? 'queued' : 'working'}));
-    const visible = orbitRows(rows);
-    assert.equal(visible.length, Math.min(3, count));
-    const represented = visible.flatMap(row => row.members ?? [row]);
-    assert.deepEqual(represented.map(row => row.id).sort(), rows.map(row => row.id).sort());
-  }
+test('background jobs never create an orb or light a conversation', () => {
+  const jobs = [{id:'bash-1',kind:'bash',owner:'parent',label:'编译',status:'running'}];
+  assert.equal(taskRows('parent', list, new Map(), jobs).length, 1);
+  assert.equal(taskRows('other', list, new Map(), jobs).length, 0);
+  assert.equal(activeSessions({byId:{}}, new Map(), {parent:jobs}).size, 0);
+});
+test('representatives retain actual identities as the fourth agent arrives', () => {
+  const rows = Array.from({length:8},(_,i)=>({id:String(i),state:'working'}));
+  assert.deepEqual(orbitRows(rows), rows.slice(0,3));
+  assert.deepEqual(orbitRows(rows.slice(0,2)),rows.slice(0,2));
+});
+test('colors are balanced random solid red yellow green and stable on reorder', () => {
+  const rows = Array.from({length:7},(_,i)=>({id:String(i)}));
+  const first = assignColors(rows.slice(0,3),new Map(),()=>.1);
+  assert.equal(new Set(first.values()).size,3);
+  const later = assignColors([...rows].reverse(),first,()=>.9);
+  for(const [id,color] of first) assert.equal(later.get(id),color);
+  const counts=AGENT_COLORS.map(c=>[...later.values()].filter(v=>v===c).length);
+  assert.ok(Math.max(...counts)-Math.min(...counts)<=1);
 });

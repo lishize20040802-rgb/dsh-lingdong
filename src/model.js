@@ -1,6 +1,6 @@
 export const DEFAULTS = Object.freeze({
   enabled: true, ambient: true, aggregate: true,
-  flight: 1850, gather: 580, settle: 900, taskFlight: 2200, reveal: 420, dissolve: 550,
+  flight: 420, gather: 320, settle: 360, reveal: 420, dissolve: 520,
   breathing: 4200, ambientPeriod: 24000, maxOrbs: 4, maxQueue: 3,
 });
 
@@ -9,7 +9,7 @@ export function normalizeOptions(input = {}) {
   for (const key of ['enabled', 'ambient', 'aggregate']) {
     if (typeof input?.[key] === 'boolean') result[key] = input[key];
   }
-  for (const key of ['flight', 'gather', 'settle', 'taskFlight', 'reveal', 'dissolve']) {
+  for (const key of ['flight', 'gather', 'settle', 'reveal', 'dissolve']) {
     if (Number.isFinite(input?.[key])) result[key] = Math.max(80, Math.min(4000, input[key]));
   }
   return result;
@@ -31,15 +31,12 @@ export function agentRows(sessionId, list, statuses) {
   });
 }
 
-export function activeSessions(list, statuses, jobsBySession = {}) {
+export function activeSessions(list, statuses) {
   const active = new Set();
   for (const [id, row] of Object.entries(list.byId ?? {})) {
     if ((statuses.get(id)?.running ?? row.running) === true) active.add(id);
   }
   for (const [id, status] of statuses) if (status.running === true) active.add(id);
-  for (const [id, jobs] of Object.entries(jobsBySession)) {
-    if (jobs.some(job => job.owner === id && (job.status === 'running' || job.status === 'stopping'))) active.add(id);
-  }
   // Propagate activity through catalog ancestry, including unopened parent rows.
   let changed = true;
   while (changed) {
@@ -74,25 +71,24 @@ export function agentLabel(row) {
 }
 
 export function taskRows(sessionId, list, statuses, jobs = []) {
-  return [...agentRows(sessionId, list, statuses), ...jobs.map(job => ({
-    id: 'job:' + job.id, title: (job.kind === 'subagent' ? '后台子代理' : '后台任务') + ' · ' + (job.label || job.id),
-    state: ['running', 'stopping'].includes(job.status) ? 'working' : 'completed',
-    statusText: ({running:'运行中',stopping:'正在停止',completed:'已完成',failed:'失败',killed:'已停止'})[job.status] || job.status,
-    progress: job.progress || job.detail, kind: job.kind,
-  }))];
+  // Compatibility export. Background jobs are deliberately neither read nor displayed.
+  return agentRows(sessionId, list, statuses);
 }
 
 /** Four or more tasks share exactly three visible representatives; no task is dropped. */
 export function orbitRows(rows) {
-  if (rows.length < 4) return rows;
-  return Array.from({ length: 3 }, (_, index) => {
-    const members = rows.filter((_, position) => position % 3 === index);
-    return {
-      id: `group:${index}`, title: `任务组 ${index + 1} · ${members.length} 项`,
-      state: members.some(row => row.state === 'working') ? 'working'
-        : members.every(row => row.state === 'completed') ? 'completed' : 'queued',
-      statusText: members.map(agentLabel).join('；'),
-      exiting: members.every(row => row.exiting), members,
-    };
-  });
+  // Keep actual identities and colors stable as the fourth agent arrives.
+  return rows.slice(0, 3);
+}
+
+export const AGENT_COLORS = Object.freeze(['#FF5F57', '#FEBC2E', '#28C840']);
+export function assignColors(rows, previous = new Map(), random = Math.random) {
+  const assigned = new Map(rows.filter(row => previous.has(row.id)).map(row => [row.id, previous.get(row.id)]));
+  for (const row of rows) if (!assigned.has(row.id)) {
+    const counts = AGENT_COLORS.map(color => [...assigned.values()].filter(value => value === color).length);
+    const minimum = Math.min(...counts);
+    const choices = AGENT_COLORS.filter((_, index) => counts[index] === minimum);
+    assigned.set(row.id, choices[Math.min(choices.length - 1, Math.floor(random() * choices.length))]);
+  }
+  return assigned;
 }

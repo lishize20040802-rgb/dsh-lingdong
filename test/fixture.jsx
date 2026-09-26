@@ -52,10 +52,18 @@ window.fixture = {
   watches: () => state.watches,
   jobs(rows) { state.jobs = { rows: { parent: rows } }; emit(); },
   send(text = '这是一条新消息', placement = 'transcript') {
+    const input = document.querySelector('[data-composer-input]');
+    input.textContent = text;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
     const id = `rpc-${Date.now()}-${Math.random()}`;
-    const row = document.createElement('div'); row.dataset.chatFlowKind = 'user'; row.textContent = text;
+    const row = document.createElement('div'); row.dataset.chatFlowKind = 'user';
+    row.style.cssText='width:100%;max-width:none;background:none;padding:0';
+    const bubble=document.createElement('div');bubble.className='LdtX1G_bubble';bubble.textContent=text;
+    bubble.style.cssText='width:fit-content;max-width:82%;margin-left:auto;background:#e8eef2;border-radius:16px;padding:10px 16px;white-space:pre-wrap;overflow-wrap:break-word';
+    const actions=document.createElement('div');actions.dataset.nativeActions='';actions.textContent='复制';actions.style.cssText='font-size:11px;text-align:right';row.append(bubble,actions);
     document.querySelector('#messages').append(row);
     state.session = { ...state.session, pendingSubmissions: [...state.session.pendingSubmissions, { requestId: id, text, placement, time: Date.now() }] }; emit();
+    input.textContent = '';
   },
   fail() { state.session = { pendingSubmissions: [], promptError: { op: 'send', error: {} } }; emit(); },
   stream() {
@@ -73,6 +81,11 @@ window.fixture = {
   complete() {
     state.list = { ...state.list, byId: Object.fromEntries(Object.keys(state.list.byId).map(id => [id, { running: false, projectionValues: { subagentTiming: { lastTurnCompleted: true } } }])) };
     state.statuses = new Map(); emit();
+  },
+  finishOne(id = 'agent-0') {
+    state.list = { ...state.list, byId: { ...state.list.byId,
+      [id]: { running: false, projectionValues: { subagentTiming: { lastTurnCompleted: true } } } } };
+    state.statuses = new Map(state.statuses); state.statuses.set(id, { running: false }); emit();
   },
   switchSession() { state.sessionId = state.sessionId === 'parent' ? 'other' : 'parent'; state.session = { pendingSubmissions: [], promptError: null }; emit(); },
   unmount() { registrations.clear(); emit(); for (const dispose of disposers.splice(0).reverse()) dispose?.(); },

@@ -1,7 +1,7 @@
 {
   "name": "dsh-lingdong",
-  "version": "0.4.1",
-  "description": "灵动：DeepSeek Harness 对话界面的克制流动动效",
+  "version": "0.5.4",
+  "description": "灵动：胶囊中的纯色液态子 Agent、连续文字发送与会话边缘流光",
   "type": "module",
   "main": "./lib/index.js",
   "exports": {
@@ -52,8 +52,7 @@
         "@deepseek-ai/dsh-client-ui-conversation",
         "@deepseek-ai/dsh-client-ui-chat",
         "@deepseek-ai/dsh-client-ui-workspace",
-        "@deepseek-ai/dsh-client-ui-layout",
-        "@deepseek-ai/dsh-api-job-controller"
+        "@deepseek-ai/dsh-client-ui-layout"
       ]
     }
   },
@@ -64,8 +63,7 @@
     "@deepseek-ai/dsh-client-ui-session": "0.1.7-rc.2",
     "@deepseek-ai/dsh-client-ui-renderer": "0.1.7-rc.2",
     "@deepseek-ai/dsh-client-ui-workspace": "0.1.7-rc.2",
-    "@deepseek-ai/dsh-client-ui-layout": "0.1.7-rc.2",
-    "@deepseek-ai/dsh-api-job-controller": "0.1.7-rc.2"
+    "@deepseek-ai/dsh-client-ui-layout": "0.1.7-rc.2"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh-client-ui-conversation": {
@@ -84,9 +82,6 @@
       "optional": true
     },
     "@deepseek-ai/dsh-client-ui-layout": {
-      "optional": true
-    },
-    "@deepseek-ai/dsh-api-job-controller": {
       "optional": true
     }
   },
