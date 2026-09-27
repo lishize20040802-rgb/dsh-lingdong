@@ -1,7 +1,7 @@
 {
   "name": "dsh-lingdong",
-  "version": "0.5.4",
-  "description": "灵动：胶囊中的纯色液态子 Agent、连续文字发送与会话边缘流光",
+  "version": "0.6.0",
+  "description": "灵动：胶囊中的纯色液态子 Agent、连续文字发送与会话边缘流光；面板跟随宿主主题",
   "type": "module",
   "main": "./lib/index.js",
   "exports": {

@@ -231,6 +231,8 @@ export class MotionSurface {
     }
     if (!target || this.dead || document.hidden || generation !== this.generation) return;
     this.claimed.add(target);
+    // Emission outranks breathing: while a message flies, this session's boiling slows down.
+    this.root.classList.add('ld-emitting'); this.dock()?.classList.add('ld-emitting');
     // Never invent a starting text position after a programmatic/attachment-only submission.
     const source = submission.visualSource;
     if (this.reduced || !source) {
@@ -297,6 +299,7 @@ export class MotionSurface {
     try { tick(started); await done; }
     finally {
       cancelAnimationFrame(frame);flight.restore();
+      this.root.classList.remove('ld-emitting'); this.dock()?.classList.remove('ld-emitting');
       if (this.messageFlight === flight) this.messageFlight = null;
       if (this.cancelMessageFrame === cancel) this.cancelMessageFrame = null;
       orb.remove();this.nodes.delete(orb);
@@ -331,12 +334,15 @@ export class MotionSurface {
 
 export function decorateSidebar(active, enabled, rows) {
   rows = [...rows].filter(row => row.isConnected);
+  // More than three flowing sessions step down together, so the sidebar never becomes a rainbow.
+  const quiet = active.size > 3;
   for (const row of rows) {
     const selected = enabled && row.getAttribute('aria-selected') === 'true';
     const running = enabled && active.has(row.dataset.rowKey.slice(8));
     row.classList.toggle('ld-row', selected || running);
     row.classList.toggle('ld-row-selected', selected);
     row.classList.toggle('ld-row-active', running);
+    row.classList.toggle('ld-quiet', quiet && (selected || running));
     if (selected || running) {
       // The glow is the row's own pseudo-element, so it follows native reordering and transforms.
       const phase = [...row.dataset.rowKey].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 0) % 86;

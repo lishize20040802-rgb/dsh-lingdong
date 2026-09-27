@@ -70,6 +70,13 @@ export function agentLabel(row) {
   return `${row.title} · ${row.inactive ? '当前未运行' : '排队 / 等待状态同步'}`;
 }
 
+/** Panel copy. States are host facts; no percentage is invented. */
+export function stateText(row) {
+  if (row.state === 'working') return '工作中';
+  if (row.state === 'completed') return '已完成';
+  return row.inactive ? '当前未运行' : '排队中';
+}
+
 export function taskRows(sessionId, list, statuses, jobs = []) {
   // Compatibility export. Background jobs are deliberately neither read nor displayed.
   return agentRows(sessionId, list, statuses);

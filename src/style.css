@@ -1,4 +1,43 @@
-.ld-surface,.ld-dock{--ld-accent:#7b9fb7;--ld-ink:var(--dsw-alias-label-primary,#344454);--ld-bg:var(--dsw-alias-bg-base,#f7f9fa)}
+/* 灵动：小球与流光保持作者契约（纯色实心、无玻璃层）；面板改为宿主 token 驱动，
+   因此跟随 DSH 的浅色/深色与其上装的皮肤，而不是自带一套写死的浅色。 */
+.ld-surface,.ld-dock,dialog.ld-settings{
+  --ld-accent:#7b9fb7;
+  --ld-ink:var(--dsw-alias-label-primary,#344454);
+  --ld-ink-2:var(--dsw-alias-label-secondary,#66788a);
+  --ld-ink-3:var(--dsw-alias-label-tertiary,#84919d);
+  --ld-panel:var(--dsw-alias-bg-overlay,#f3f6f8);
+  --ld-panel-edge:var(--dsw-alias-border-l2,#0000001a);
+  --ld-mask:var(--dsw-alias-bg-mask-1,#0000003d);
+  --ld-layer:var(--dsw-alias-bg-layer-2,#ffffff);
+  --ld-bg:var(--dsw-alias-bg-base,#f7f9fa);
+  --ld-lift:0 18px 44px #16283c1c,0 2px 6px #16283c12;
+  --ld-lift-sm:0 8px 24px #16283c14;
+  --ld-focus:var(--dsw-alias-brand-primary,#4f7fd8);
+}
+@media (prefers-color-scheme:dark){.ld-surface,.ld-dock,dialog.ld-settings{
+  --ld-ink:var(--dsw-alias-label-primary,#e4eaf0);
+  --ld-ink-2:var(--dsw-alias-label-secondary,#a2b0bc);
+  --ld-ink-3:var(--dsw-alias-label-tertiary,#7c8a96);
+  --ld-panel:var(--dsw-alias-bg-overlay,#232b34);
+  --ld-panel-edge:var(--dsw-alias-border-l2,#ffffff1f);
+  --ld-mask:var(--dsw-alias-bg-mask-1,#00000080);
+  --ld-layer:var(--dsw-alias-bg-layer-2,#1b222a);
+  --ld-bg:var(--dsw-alias-bg-base,#151b21);
+  --ld-lift:0 20px 52px #00000059,0 2px 8px #00000040;
+  --ld-lift-sm:0 10px 28px #0000004d;
+}}
+[data-ds-dark-theme] :is(.ld-surface,.ld-dock,dialog.ld-settings){
+  --ld-ink:var(--dsw-alias-label-primary,#e4eaf0);
+  --ld-ink-2:var(--dsw-alias-label-secondary,#a2b0bc);
+  --ld-ink-3:var(--dsw-alias-label-tertiary,#7c8a96);
+  --ld-panel:var(--dsw-alias-bg-overlay,#232b34);
+  --ld-panel-edge:var(--dsw-alias-border-l2,#ffffff1f);
+  --ld-mask:var(--dsw-alias-bg-mask-1,#00000080);
+  --ld-layer:var(--dsw-alias-bg-layer-2,#1b222a);
+  --ld-bg:var(--dsw-alias-bg-base,#151b21);
+  --ld-lift:0 20px 52px #00000059,0 2px 8px #00000040;
+  --ld-lift-sm:0 10px 28px #0000004d;
+}
 @property --ld-ax{syntax:'<percentage>';inherits:false;initial-value:8%}@property --ld-ay{syntax:'<percentage>';inherits:false;initial-value:14%}
 @property --ld-bx{syntax:'<percentage>';inherits:false;initial-value:78%}@property --ld-by{syntax:'<percentage>';inherits:false;initial-value:0%}
 @property --ld-cx{syntax:'<percentage>';inherits:false;initial-value:100%}@property --ld-cy{syntax:'<percentage>';inherits:false;initial-value:82%}
@@ -6,27 +45,70 @@
 .ld-row:before,.ld-row:after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(ellipse 28% 62% at var(--ld-ax) var(--ld-ay),#65cafaaf 0%,#65cafa66 35%,transparent 76%),radial-gradient(ellipse 31% 70% at var(--ld-bx) var(--ld-by),#ae8ce8aa 0%,#ae8ce855 40%,transparent 77%),radial-gradient(ellipse 35% 75% at var(--ld-cx) var(--ld-cy),#f0a2c69c 0%,#f0a2c64d 42%,transparent 78%);mask-image:linear-gradient(to right,#000,transparent 19px),linear-gradient(to left,#000,transparent 19px),linear-gradient(to bottom,#000,transparent 14px),linear-gradient(to top,#000,transparent 14px);mask-composite:add,add,add;animation:ld-aurora-path 8.6s ease-in-out infinite;animation-delay:var(--ld-glow-delay,0s);filter:blur(3px)}
 .ld-row:after{animation-duration:12.4s;animation-direction:reverse;filter:blur(9px);opacity:.68}
 .ld-row-active:before{animation-duration:6.8s}.ld-row-active:after{animation-duration:9.7s}.ld-row-active:not(.ld-row-selected):before,.ld-row-active:not(.ld-row-selected):after{opacity:.68}
+/* 超过 3 个会话同时流动时统一降噪，避免侧边栏变成彩虹 */
+.ld-row.ld-quiet:before{opacity:.32}
+.ld-row.ld-quiet:after{opacity:.18}
 @keyframes ld-aurora-path{0%,100%{--ld-ax:8%;--ld-ay:14%;--ld-bx:78%;--ld-by:0%;--ld-cx:100%;--ld-cy:82%}25%{--ld-ax:42%;--ld-ay:0%;--ld-bx:100%;--ld-by:44%;--ld-cx:54%;--ld-cy:100%}50%{--ld-ax:100%;--ld-ay:20%;--ld-bx:65%;--ld-by:100%;--ld-cx:0%;--ld-cy:72%}75%{--ld-ax:72%;--ld-ay:100%;--ld-bx:0%;--ld-by:52%;--ld-cx:40%;--ld-cy:0%}}
 .ld-effects{position:fixed;z-index:1;pointer-events:none;overflow:hidden;contain:layout paint}
 .ld-ambient{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,#839fba0c,transparent 65%),radial-gradient(ellipse at 80% 75%,#9990af09,transparent 60%);animation:ld-ambient 24s ease-in-out infinite alternate}@keyframes ld-ambient{from{opacity:.55}to{opacity:1}}
 .ld-dock{display:flex;align-items:center;position:relative;min-width:0;flex-shrink:0;color:var(--ld-ink)}
-.ld-capsule{font:inherit;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:36px;min-width:78px;padding:0 6px;border:0;border-radius:999px;background:transparent;color:inherit;cursor:pointer;overflow:visible}
-.ld-capsule:hover{background:transparent}.ld-capsule:focus-visible,.ld-settings-button:focus-visible,.ld-settings button:focus-visible{outline:2px solid var(--ld-accent);outline-offset:3px}
+.ld-capsule{font:inherit;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:36px;min-width:78px;padding:0 6px;border:0;border-radius:999px;background:transparent;color:inherit;cursor:pointer;overflow:visible;transition:transform .18s ease}
+.ld-capsule:hover{background:transparent;transform:translateY(-1px)}
+.ld-capsule:active{transform:translateY(0) scale(.985)}
+.ld-capsule:focus-visible,.ld-settings button:focus-visible,.ld-switch input:focus-visible+.ld-switch-track{outline:2px solid var(--ld-focus);outline-offset:3px}
 .ld-orbs{position:relative;display:block;width:66px;height:32px;flex:none;pointer-events:none}
 .ld-orb-wrap{position:absolute;left:50%;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;transform:translateX(var(--ld-home-x));will-change:transform}
 .ld-orb{position:relative;display:block;width:12px;height:12px;border:0;box-shadow:none;overflow:visible}.ld-orb-body{position:absolute;inset:0;display:block;border-radius:50%;background:var(--ld-color)}
 .ld-orb i{display:block;position:absolute;left:4px;top:-1px;width:3.5px;height:3.5px;border-radius:50%;background:var(--ld-color);opacity:0;pointer-events:none}.ld-working i{animation:ld-boil 1.25s ease-in-out infinite}.ld-working i:nth-child(2){left:8px;width:3px;height:3px;animation-delay:-.42s}.ld-working i:nth-child(3){left:1px;width:2.5px;height:2.5px;animation-delay:-.84s}
 @keyframes ld-boil{0%,8%{opacity:0;transform:translate(0,2px) scale(.4)}20%{opacity:1;transform:translate(0,-2px) scale(1.1)}60%{opacity:1}90%,100%{opacity:0;transform:translate(2px,-15px) scale(.2)}}
+/* 发射优先：消息飞行期间，同会话的呼吸动效降速让位（brief §6.1） */
+.ld-dock.ld-emitting .ld-working i,.ld-surface.ld-emitting .ld-working i{animation-duration:2.6s;opacity:.6}
 .ld-orbits-2 .ld-orb-wrap[data-ld-active=true]{animation:ld-binary-orbit 5.6s linear infinite;animation-delay:var(--ld-orbit-delay)}
 .ld-orbits-3 .ld-orb-wrap[data-ld-active=true]{animation:ld-three-body 8.4s linear infinite;animation-delay:var(--ld-orbit-delay)}
 @keyframes ld-binary-orbit{0%,100%{transform:translate(17px,0) scale(1);z-index:2}12.5%{transform:translate(12px,4px) scale(1.04);z-index:3}25%{transform:translate(0,6px) scale(1.08);z-index:3}37.5%{transform:translate(-12px,4px) scale(1.04);z-index:3}50%{transform:translate(-17px,0) scale(1);z-index:2}62.5%{transform:translate(-12px,-4px) scale(.96);z-index:1}75%{transform:translate(0,-6px) scale(.92);z-index:1}87.5%{transform:translate(12px,-4px) scale(.96);z-index:1}}
 @keyframes ld-three-body{0%,100%{transform:translate(0,0) scale(1.07);z-index:3}12.5%{transform:translate(14px,6px) scale(1.04);z-index:3}25%{transform:translate(20px,0) scale(1);z-index:2}37.5%{transform:translate(14px,-6px) scale(.95);z-index:1}50%{transform:translate(0,0) scale(.92);z-index:1}62.5%{transform:translate(-14px,6px) scale(.95);z-index:1}75%{transform:translate(-20px,0) scale(1);z-index:2}87.5%{transform:translate(-14px,-6px) scale(1.04);z-index:3}}
-.ld-task-list{position:absolute;right:0;top:calc(100% + 9px);z-index:100;width:300px;max-width:calc(100vw - 24px);max-height:min(340px,65vh);overflow:auto;padding:16px;border:1px solid color-mix(in srgb,var(--ld-ink) 18%,transparent);border-radius:14px;background:var(--ld-bg);color:var(--ld-ink);box-shadow:0 12px 36px #20304722;font-size:12px;line-height:1.7}.ld-task-list ul{padding:0;margin:10px 0;list-style:none}.ld-task-list li{display:flex;align-items:baseline;gap:9px;padding:7px 0;overflow-wrap:anywhere}.ld-identity{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none}
-.ld-settings-button{font:inherit;appearance:none;background:transparent;border:1px solid #91a9ba55;border-radius:8px;padding:6px 10px;color:inherit;cursor:pointer}
-.ld-settings{position:fixed;inset:0;margin:auto;width:330px;max-width:calc(100vw - 32px);display:flex;flex-direction:column;gap:15px;padding:24px;border:1px solid #b6c2d180;border-radius:20px;background:var(--ld-bg);color:var(--ld-ink);box-shadow:0 24px 80px #20304730;font:13px/1.6 system-ui}.ld-settings::backdrop{background:#18253626}.ld-settings label{display:flex;align-items:center;gap:8px}.ld-settings input{accent-color:#7b9fb7}.ld-settings small{opacity:.75}.ld-settings button{font:inherit;color:inherit;background:transparent;border:1px solid #91a9ba55;border-radius:6px;padding:5px}
+/* 子 Agent 面板：中性表面 + 两行式行项目，彩色只留给身份点 */
+.ld-task-list{position:absolute;right:0;top:calc(100% + 10px);z-index:100;width:308px;max-width:calc(100vw - 24px);max-height:min(360px,66vh);overflow:auto;padding:12px;border:1px solid var(--ld-panel-edge);border-radius:16px;background:var(--ld-panel);color:var(--ld-ink);box-shadow:var(--ld-lift);font:inherit;font-size:13px;line-height:1.55;animation:ld-panel-in .18s ease-out}
+@keyframes ld-panel-in{from{opacity:0;transform:translateY(-4px)}}
+.ld-panel-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:2px 6px 10px;border-bottom:1px solid var(--ld-panel-edge)}
+.ld-panel-title{font-size:13.5px;font-weight:600;letter-spacing:.01em}
+.ld-panel-count{font-size:12px;color:var(--ld-ink-2);font-variant-numeric:tabular-nums}
+.ld-task-list ul{padding:0;margin:6px 0 0;list-style:none;display:flex;flex-direction:column}
+.ld-task-list li{display:grid;grid-template-columns:auto 1fr;align-items:start;gap:10px;padding:9px 6px;border-radius:10px;overflow-wrap:anywhere}
+.ld-task-list li+li{border-top:1px solid color-mix(in srgb,var(--ld-panel-edge) 60%,transparent)}
+.ld-identity{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none;margin-top:6px}
+.ld-task-title{font-weight:500}
+.ld-task-state{display:block;margin-top:1px;font-size:12px;color:var(--ld-ink-2)}
+.ld-empty{margin:8px 6px 2px;font-size:12.5px;line-height:1.6;color:var(--ld-ink-2)}
+.ld-settings-button{font:inherit;font-size:13px;display:block;width:calc(100% - 12px);margin:10px 6px 2px;appearance:none;background:transparent;border:1px solid var(--ld-panel-edge);border-radius:10px;padding:8px 10px;color:inherit;cursor:pointer;transition:background-color .16s ease}
+.ld-settings-button:hover{background:color-mix(in srgb,var(--ld-ink) 7%,transparent)}
+/* 设置面板：head / body / foot 三段，分组呈现，走宿主表面色与描边 */
+.ld-settings{position:fixed;inset:0;margin:auto;width:344px;max-width:calc(100vw - 32px);max-height:calc(100vh - 48px);overflow:auto;display:flex;flex-direction:column;padding:0;border:1px solid var(--ld-panel-edge);border-radius:18px;background:var(--ld-panel);color:var(--ld-ink);box-shadow:var(--ld-lift);font:inherit;font-size:13.5px;line-height:1.6;animation:ld-dialog-in .2s ease-out}
+@keyframes ld-dialog-in{from{opacity:0;transform:translateY(6px) scale(.985)}}
+.ld-settings::backdrop{background:var(--ld-mask)}
+.ld-settings-head{padding:18px 20px 12px}
+.ld-settings-head h2{margin:0;font-size:15px;font-weight:600;letter-spacing:.01em}
+.ld-settings-body{display:flex;flex-direction:column;gap:18px;padding:0 20px 4px}
+.ld-settings-group{display:flex;flex-direction:column;gap:2px}
+.ld-settings-group h3{margin:0 0 6px;font-size:12px;font-weight:600;color:var(--ld-ink-2)}
+.ld-switch{position:relative;display:grid;grid-template-columns:auto 1fr;align-items:start;gap:11px;padding:9px 4px;border-radius:12px;cursor:pointer}
+.ld-switch input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.ld-switch-track{position:relative;display:block;width:36px;height:20px;margin-top:2px;border-radius:999px;background:color-mix(in srgb,var(--ld-ink) 18%,transparent);transition:background-color .2s ease;flex:none}
+.ld-switch-thumb{position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:var(--ld-layer);box-shadow:0 1px 2px #16283c33;transition:transform .2s cubic-bezier(.22,.75,.25,1)}
+.ld-switch input:checked+.ld-switch-track{background:var(--ld-accent)}
+.ld-switch input:checked+.ld-switch-track .ld-switch-thumb{transform:translateX(16px)}
+.ld-switch input:disabled+.ld-switch-track{opacity:.5}
+.ld-switch-label{display:block;font-size:13.5px;font-weight:500}
+.ld-switch small{display:block;margin-top:2px;font-size:12px;font-weight:400;color:var(--ld-ink-2)}
+.ld-status{display:flex;align-items:flex-start;gap:9px;margin:0 4px;font-size:12.5px;color:var(--ld-ink-2)}
+.ld-status-dot{width:7px;height:7px;margin-top:6px;border-radius:50%;flex:none;background:var(--ld-ink-3)}
+.ld-status-live .ld-status-dot{background:#28C840}
+.ld-settings-foot{display:flex;justify-content:flex-end;padding:14px 20px 16px;margin-top:6px;border-top:1px solid var(--ld-panel-edge)}
+.ld-settings-foot button{font:inherit;font-size:13px;font-weight:500;padding:7px 15px;border:1px solid var(--ld-panel-edge);border-radius:10px;background:transparent;color:inherit;cursor:pointer;transition:background-color .16s ease}
+.ld-settings-foot button:hover{background:color-mix(in srgb,var(--ld-ink) 7%,transparent)}
 .ld-flight{position:absolute;width:18px;height:18px;border-radius:50%;transform:translate(-50%,-50%);background:var(--ld-accent);pointer-events:none;overflow:visible;box-sizing:border-box}.ld-message-flight{background:transparent!important}.ld-flight-copy{position:absolute;left:50%;top:50%;transform-origin:center;pointer-events:none;overflow:hidden}.ld-flight-core{position:absolute;inset:0;border-radius:inherit;background:conic-gradient(from var(--ld-flow-angle),#57c9e8,#8a7bdf,#ee8ac8,#f3b86a,#65cfae,#57c9e8);box-shadow:0 0 10px 2px #9b94d766;animation:ld-message-flow .65s linear infinite}@property --ld-flow-angle{syntax:'<angle>';inherits:false;initial-value:0deg}@keyframes ld-message-flow{to{--ld-flow-angle:360deg}}
 .ld-stream:after{content:'';display:inline-block;vertical-align:middle;width:5px;height:5px;margin:0 0 3px 3px;border-radius:50%;background:var(--ld-accent);box-shadow:0 0 7px 2px #7b9fb740;animation:ld-breathe 4.2s ease-in-out infinite}@keyframes ld-breathe{0%,100%{opacity:.65}50%{opacity:1}}.ld-received{outline:1px solid #7b9fb780;outline-offset:2px}
 .ld-paused,.ld-paused *,.ld-paused:before,.ld-paused:after,.ld-paused *:before,.ld-paused *:after{animation-play-state:paused!important}.ld-reduced *{animation:none!important;transition:none!important}.ld-reduced .ld-orb i{display:none}
-@media(prefers-reduced-motion:reduce){.ld-row:before,.ld-row:after,.ld-dock *,.ld-ambient,.ld-stream:after{animation:none!important;transition:none!important}.ld-orb i{display:none}.ld-flight{display:none}}
+@media(prefers-reduced-motion:reduce){.ld-row:before,.ld-row:after,.ld-dock *,.ld-ambient,.ld-stream:after,.ld-settings,.ld-task-list{animation:none!important;transition:none!important}.ld-orb i{display:none}.ld-flight{display:none}}
 @media(forced-colors:active){.ld-row:before,.ld-row:after{background:Highlight;animation:none}.ld-orb-body{background:ButtonText;border:1px solid ButtonText}.ld-orb i{display:none}.ld-capsule{border:0;background:Canvas;color:ButtonText}.ld-flight-core{background:Highlight;animation:none}.ld-ambient{display:none}}
 @media(max-width:600px){.ld-capsule{height:34px;padding:0 5px;min-width:74px}.ld-orbs{width:64px}}

@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, useId } from 'react';
-import { normalizeOptions, agentRows, assignColors, AGENT_COLORS, agentLabel, reconcileAgents, activeSessions } from './model.js';
+import { normalizeOptions, agentRows, assignColors, AGENT_COLORS, agentLabel, stateText, reconcileAgents, activeSessions } from './model.js';
 import { MotionSurface, SELECTORS, SidebarObserver, clearSidebar, EASING } from './motion.js';
 import css from './style.css';
 
@@ -151,6 +151,10 @@ export function apply(ctx) {
     const activeColors = displayed.map((row, index) => row && (row.state === 'working' || row.exiting) ? index : -1).filter(index => index >= 0);
     const catalog = list.projectionsBySession?.[props.sessionId]?.values?.subagentCatalog
       ?? list.byId?.[props.sessionId]?.projectionValues?.subagentCatalog;
+    const working = rows.filter(row => row.state === 'working').length;
+    const catalogText = catalog === undefined ? '正在读取子 Agent 目录…'
+      : catalog.length ? `当前会话共 ${catalog.length} 个子 Agent，${working} 个运行中。`
+        : '当前会话还没有子 Agent。';
     return h('div', { ref: marker, className: `ld-dock${reduced ? ' ld-reduced' : ''}${paused ? ' ld-paused' : ''}`,
       'data-ld-session': props.sessionId, 'aria-label': '灵动对话状态区' },
       h('button', { ref: capsuleRef, type: 'button', className: 'ld-capsule',
@@ -161,10 +165,15 @@ export function apply(ctx) {
           displayed.map((row, index) => h(Orb, { key: AGENT_COLORS[index], row, color: AGENT_COLORS[index], index,
             active: activeColors.includes(index), rank: activeColors.indexOf(index), reduced })))),
       expanded && h('div', { id: `${orbsId}-tasks`, className: 'ld-task-list', role: 'region', 'aria-label': '子 Agent 状态' },
-        h('strong', null, `${rows.length} 个子 Agent`),
+        h('div', { className: 'ld-panel-head' },
+          h('span', { className: 'ld-panel-title' }, '子 Agent'),
+          h('span', { className: 'ld-panel-count' }, rows.length ? `${working} 运行中 / 共 ${rows.length}` : '暂无')),
         rows.length ? h('ul', null, rows.map(row => h('li', { key: row.id },
-          h('span', { className: 'ld-identity', style: { background: row.color }, 'aria-hidden': true }), agentLabel(row))))
-          : h('p', null, '当前没有子 Agent'),
+          h('span', { className: 'ld-identity', style: { background: row.color }, 'aria-hidden': true }),
+          h('span', null,
+            h('span', { className: 'ld-task-title' }, row.title ?? agentLabel(row)),
+            h('span', { className: 'ld-task-state' }, stateText(row))))))
+          : h('p', { className: 'ld-empty' }, '当前没有子 Agent。开启子 Agent 后，它们会在这里逐个出现。'),
         h('button', { ref: settingsTrigger, type: 'button', className: 'ld-settings-button', 'aria-haspopup': 'dialog',
           'aria-controls': dialogId, 'aria-expanded': settings, onClick: () => setSettings(true) }, '灵动动效设置')),
       settings && h('dialog', { ref: settingsRef, id: dialogId, className: 'ld-settings', 'aria-labelledby': `${dialogId}-title`,
@@ -174,14 +183,29 @@ export function apply(ctx) {
           const rect = event.currentTarget.getBoundingClientRect();
           if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) setSettings(false);
         } },
-        h('strong', { id: `${dialogId}-title` }, '灵动动效设置'),
-        ...[['enabled', '启用动效'], ['ambient', '背景氛围']].map(([key, label]) =>
-          h('label', { key }, h('input', { type: 'checkbox', checked: options[key], onChange: event => prefs.update({ [key]: event.target.checked }) }), label)),
-        h('small', null, reduced ? '系统已开启减少动态效果：使用静态状态。' : '状态来自 DSH；不额外调用模型。'),
-        h('small', null, '双球相互环绕；三球交错运行；4 个及以上子 Agent 显示 3 个代表球，点击胶囊查看完整列表。'),
-        h('small', { className: 'ld-catalog-status' }, catalog === undefined ? '当前会话的子 agent 目录尚未就绪。'
-          : `当前会话：${catalog.length} 个子 agent，${rows.filter(row => row.state === 'working').length} 个运行中。`),
-        h('button', { type: 'button', onClick: () => setSettings(false) }, '关闭')));
+        h('div', { className: 'ld-settings-head' },
+          h('h2', { id: `${dialogId}-title` }, '灵动动效设置')),
+        h('div', { className: 'ld-settings-body' },
+          h('section', { className: 'ld-settings-group' },
+            h('h3', null, '外观'),
+            ...[['enabled', '启用动效', '子 Agent 小球、消息飞行与文字浮现'],
+              ['ambient', '背景氛围', '随会话状态流动的边缘光']].map(([key, label, hint]) =>
+              h('label', { key, className: 'ld-switch' },
+                h('input', { type: 'checkbox', checked: options[key], onChange: event => prefs.update({ [key]: event.target.checked }) }),
+                h('span', { className: 'ld-switch-track', 'aria-hidden': true }, h('span', { className: 'ld-switch-thumb' })),
+                h('span', null,
+                  h('span', { className: 'ld-switch-label' }, label),
+                  h('small', null, hint)))),
+            reduced && h('p', { className: 'ld-status' },
+              h('span', { className: 'ld-status-dot', 'aria-hidden': true }),
+              h('span', null, '系统已开启减少动态效果，动效以静态呈现。'))),
+          h('section', { className: 'ld-settings-group' },
+            h('h3', null, '当前会话'),
+            h('p', { className: `ld-status${working ? ' ld-status-live' : ''}` },
+              h('span', { className: 'ld-status-dot', 'aria-hidden': true }),
+              h('span', null, catalogText)))),
+        h('div', { className: 'ld-settings-foot' },
+          h('button', { type: 'button', onClick: () => setSettings(false) }, '关闭'))));
   }
 
   function Surface(props) {
