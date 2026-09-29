@@ -1,4 +1,4 @@
-# 灵动 · dsh-lingdong 0.5.4
+# 灵动 · dsh-lingdong 0.6.1
 
 [简体中文](README.md) · [English](README.en.md)
 
