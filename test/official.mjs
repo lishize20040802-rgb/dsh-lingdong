@@ -4,12 +4,14 @@ import { pathToFileURL, fileURLToPath } from 'node:url';
 import path from 'node:path';
 import vm from 'node:vm';
 const reference = process.env.DSH_REFERENCE_ROOT;
-if (!reference) throw new Error('Set DSH_REFERENCE_ROOT to the installed @deepseek-ai package directory for DSH 0.1.7-rc.2.');
+if (!reference) throw new Error('Set DSH_REFERENCE_ROOT to the installed @deepseek-ai package directory of the DSH runtime under test.');
 const root = fileURLToPath(new URL('../', import.meta.url));
 const manifest = JSON.parse(await readFile(path.join(root, 'package.json')));
 const load = async name => import(pathToFileURL(path.join(reference, name, 'lib/index.js')).href);
 const { evaluatePluginCompatibility, bundlePatchPaths, loadOptionalPatches } = await load('dsh-app-boot');
-assert.equal(evaluatePluginCompatibility(manifest, {}, '0.1.7-rc.2'), undefined);
+// No explicit runtime version: app-boot answers with its own package version, so this
+// asserts compatibility with whatever runtime the reference root actually ships.
+assert.equal(evaluatePluginCompatibility(manifest), undefined);
 assert.ok(evaluatePluginCompatibility(manifest, {}, '0.1.6'));
 const paths = bundlePatchPaths(root, manifest.dsh.bundle);
 assert.equal(paths.length, 1);

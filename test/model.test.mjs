@@ -57,7 +57,7 @@ test('bundle is lazy CJS and requests only the shared React module', async () =>
   assert.deepEqual(requests, ['react']); assert.equal(typeof exports.apply, 'function');
   assert.deepEqual(Array.from(exports.inject), ['slots', 'uiSession', 'uiConversation']);
   assert.equal(manifest.dsh.manifestVersion, 1);
-  assert.equal(manifest.engines.dsh, '0.1.7-rc.2');
+  assert.equal(manifest.engines.dsh, '>=0.1.7');
   assert.match(await readFile(new URL('../cordis.patch.yml', import.meta.url), 'utf8'), /name: dsh-lingdong/);
 });
 

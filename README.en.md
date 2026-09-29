@@ -15,7 +15,7 @@ A small visual enhancement for the official DeepSeek Harness Desktop 0.1.7-rc.2 
 
 ## Install and settings
 
-In the official desktop app, choose **Plugins → Install plugin → Local directory** and select the complete `dsh-lingdong` folder. The package includes a prebuilt `lib` directory, so installation does not require a build step. This release is verified only with official DSH 0.1.7-rc.2; recheck compatibility after upgrading the host.
+In the official desktop app, choose **Plugins → Install plugin → Local directory** and select the complete `dsh-lingdong` folder. The package includes a prebuilt `lib` directory, so installation does not require a build step. Compatibility is declared as `>=0.1.7` instead of one pinned host version; the interface and bundle-patch checks pass against official 0.2.0-rc.1 on this machine, but the DOM selectors have not been re-verified against the newer host, so confirm the effects after upgrading.
 
 Click the three balls in the upper-right corner, then **Lingdong motion settings** (shown in the app's current Chinese UI), to toggle effects and ambient light. Existing enable/ambient preferences are retained. The three idle balls remain visible when no subagent is active.
 
